@@ -11,7 +11,7 @@ pub async fn send_password_reset_email(to: &str, reset_token: &str) -> Result<()
         .to(to.parse().unwrap())
         .subject("Password Reset")
         .header(ContentType::TEXT_PLAIN)
-        .body(format!("Your password reset token is: {reset_token}\nThe link to the reset page: {}.", format!("http://localhost:5173/reset-password?token={reset_token}")))
+        .body(format!("Your password reset token is: {reset_token}\nThe link to the reset page: {}.", format!("http://localhost:5173/libri_project/reset-password?token={reset_token}")))
         .unwrap();
 
     let smtp_username = dotenv::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
@@ -25,7 +25,12 @@ pub async fn send_password_reset_email(to: &str, reset_token: &str) -> Result<()
         .build();
 
     // Send the email
-    mailer.send(&email)?;
+    match mailer.send(&email) { 
+        // If email was sent successfully, print confirmation message
+        Ok(_) => println!("Email sent successfully!"), 
+        // If there was an error sending the email, print the error
+        Err(e) => eprintln!("Could not send email: {:?}", e), 
+    }
 
     Ok(())
 }
