@@ -4,7 +4,6 @@ use crate::services::{auth_service, book_service};
 
 use actix_web::{middleware::Logger, App, HttpServer};
 use env_logger::Env;
-// use std::error::Error;
 
 pub struct Server;
 
@@ -25,6 +24,8 @@ impl Server {
                 .wrap(Logger::default())
                 .service(auth_service::signup)
                 .service(auth_service::signin)
+                .service(auth_service::forgot_password)
+                .service(auth_service::reset_password)
                 .service(book_service::get_book_by_id)
                 .service(book_service::create_book)
                 .service(book_service::buy_book)

@@ -1,5 +1,6 @@
 use crate::database::Database;
 use crate::utils::password;
+use crate::utils::email;
 
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -8,8 +9,8 @@ use std::error::Error;
 pub struct User {
     pub id: Option<i32>,
     pub email: Option<String>,
-    pub username: String,
-    pub password: String,
+    pub username: Option<String>,
+    pub password: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,8 +24,8 @@ pub struct UserBooks {
 impl User {
     pub async fn new(db: &mut Database, user: User) -> Result<Self, Box<dyn Error>> {
         // Check if any required fields are null or empty
-        if user.username.is_empty()
-            || user.password.is_empty()
+        if user.username.is_none()
+            || user.password.is_none()
             || user.email.is_none()
             || user.email.as_ref().unwrap().is_empty()
         {
@@ -45,7 +46,7 @@ impl User {
         }
 
         // If user doesn't exist, create a new one
-        let hashed_password = password::hash_password(&user.password);
+        let hashed_password = password::hash_password(&user.password.unwrap());
         let result = sqlx::query!(
             "INSERT INTO users(email, username, password) VALUES(?, ?, ?)",
             user.email,
@@ -58,9 +59,9 @@ impl User {
         let id = result.last_insert_id() as i32;
         Ok(Self {
             id: Some(id),
-            username: user.username,
             email: user.email,
-            password: hashed_password,
+            username: user.username,
+            password: Some(hashed_password),
         })
     }
 
@@ -78,8 +79,8 @@ impl User {
 
         match user_data {
             Some(hashed_user) => {
-                if password::verify_password(&user.password, &hashed_user.password) {
-                    Ok(user)
+                if password::verify_password(&user.password.unwrap(), &hashed_user.password.as_ref().unwrap()) {
+                    Ok(hashed_user)
                 } else {
                     Err("Invalid password".into())
                 }
@@ -118,5 +119,62 @@ impl User {
         .await?;
 
         Ok(user_books)
+    }
+    
+    pub(crate) async fn forgot_password(db: &mut Database, user: User) -> Result<(), Box<dyn Error>> {
+        let user = sqlx::query_as!(
+            Self,
+            "SELECT * FROM users WHERE email = ?",
+            user.email
+        )
+        .fetch_optional(&db.pool)
+        .await?;
+
+        match user {
+            Some(user) => {
+                // Generate a password reset token (you'll need to implement this)
+                let reset_token = email::generate_reset_token().await;
+
+                // Store the reset token in the database (you'll need to implement this)
+                let _res = email::store_reset_token(db, user.id.unwrap(), &reset_token).await;
+
+                // Send the password reset email
+                email::send_password_reset_email(&user.email.unwrap(), &reset_token).await?;
+
+                Ok(())
+            }
+            None => Err("User not found".into()),
+        }
+    }
+    
+    pub(crate) async fn reset_password(db: &mut Database, token: String, new_password: String) -> Result<(), Box<dyn Error>> {
+        // Verify the reset token
+        let user = sqlx::query!(
+            "SELECT * FROM reset_tokens WHERE token = ? AND token_expires > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
+            token
+        )
+        .fetch_optional(&db.pool)
+        .await?;
+
+        match user {
+            Some(user) => {
+                // Update the user's password
+                let hashed_password = password::hash_password(&new_password);
+                let _  = sqlx::query!(
+                    "UPDATE users SET password = ? WHERE id = ?",
+                    hashed_password,
+                    &user.user_id
+                )
+                .execute(&db.pool)
+                .await;
+
+                let _ = sqlx::query!("DELETE FROM reset_tokens WHERE user_id = ?", user.user_id)
+                .execute(&db.pool)
+                .await;
+
+                Ok(())
+            }
+            None => Err("Invalid or expired reset token".into()),
+        }
     }
 }

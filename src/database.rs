@@ -21,7 +21,7 @@ impl Database {
             .username("root")
             .host("localhost")
             .port(3306)
-            .database("task_manager")
+            .database("libri_backend")
             .connect()
             .await?;
 

@@ -7,9 +7,11 @@ edition = "2021"
 actix-web = "4.9.0"
 serde = "1.0.210"
 serde_json = "1.0.128"
-sqlx = { version = "0.8.2", features = ["derive", "runtime-tokio-rustls", "mysql"] }
+sqlx = { version = "0.8.2", features = ["derive", "runtime-tokio-rustls", "mysql", "time"] }
 tokio = { version = "1.40.0", features = ["full"] }
 dotenv = "0.15.0"
 hex = "0.4.3"
 sha2 = "0.10.8"
 env_logger = "0.11.5"
+lettre = "0.11.9"
+rand = "0.8.5"
