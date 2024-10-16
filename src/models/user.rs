@@ -1,6 +1,6 @@
 use crate::database::Database;
-use crate::utils::password;
 use crate::utils::email;
+use crate::utils::password;
 
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -79,7 +79,10 @@ impl User {
 
         match user_data {
             Some(hashed_user) => {
-                if password::verify_password(&user.password.unwrap(), &hashed_user.password.as_ref().unwrap()) {
+                if password::verify_password(
+                    &user.password.unwrap(),
+                    &hashed_user.password.as_ref().unwrap(),
+                ) {
                     Ok(hashed_user)
                 } else {
                     Err("Invalid password".into())
@@ -87,23 +90,6 @@ impl User {
             }
             None => Err("User not found".into()),
         }
-    }
-
-    pub async fn find_user(
-        db: &mut Database,
-        email: String,
-        username: String,
-    ) -> Result<Self, Box<dyn Error>> {
-        let user = sqlx::query_as!(
-            Self,
-            "SELECT * FROM users WHERE email = ? OR username = ?",
-            &email,
-            &username
-        )
-        .fetch_one(&db.pool)
-        .await?;
-
-        Ok(user)
     }
 
     pub async fn find_user_books(
@@ -120,15 +106,14 @@ impl User {
 
         Ok(user_books)
     }
-    
-    pub(crate) async fn forgot_password(db: &mut Database, user: User) -> Result<(), Box<dyn Error>> {
-        let user = sqlx::query_as!(
-            Self,
-            "SELECT * FROM users WHERE email = ?",
-            user.email
-        )
-        .fetch_optional(&db.pool)
-        .await?;
+
+    pub(crate) async fn forgot_password(
+        db: &mut Database,
+        user: User,
+    ) -> Result<(), Box<dyn Error>> {
+        let user = sqlx::query_as!(Self, "SELECT * FROM users WHERE email = ?", user.email)
+            .fetch_optional(&db.pool)
+            .await?;
 
         match user {
             Some(user) => {
@@ -146,8 +131,12 @@ impl User {
             None => Err("User not found".into()),
         }
     }
-    
-    pub(crate) async fn reset_password(db: &mut Database, token: String, new_password: String) -> Result<(), Box<dyn Error>> {
+
+    pub(crate) async fn reset_password(
+        db: &mut Database,
+        token: String,
+        new_password: String,
+    ) -> Result<(), Box<dyn Error>> {
         // Verify the reset token
         let user = sqlx::query!(
             "SELECT * FROM reset_tokens WHERE token = ? AND token_expires > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
@@ -160,7 +149,7 @@ impl User {
             Some(user) => {
                 // Update the user's password
                 let hashed_password = password::hash_password(&new_password);
-                let _  = sqlx::query!(
+                let _ = sqlx::query!(
                     "UPDATE users SET password = ? WHERE id = ?",
                     hashed_password,
                     &user.user_id
@@ -169,8 +158,8 @@ impl User {
                 .await;
 
                 let _ = sqlx::query!("DELETE FROM reset_tokens WHERE user_id = ?", user.user_id)
-                .execute(&db.pool)
-                .await;
+                    .execute(&db.pool)
+                    .await;
 
                 Ok(())
             }

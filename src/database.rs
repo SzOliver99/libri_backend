@@ -11,7 +11,7 @@ pub struct Database {
 impl Database {
     pub async fn new(url: String) -> Result<Self, Box<dyn Error>> {
         let pool = sqlx::mysql::MySqlPoolOptions::new()
-            .max_connections(5) // You can adjust the number of connections as needed
+            .max_connections(5)
             .connect(&url)
             .await?;
 

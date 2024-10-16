@@ -1,3 +1,4 @@
-pub mod auth_service;
-pub mod other_service;
-pub mod book_service;
+pub mod auth;
+pub mod book;
+pub mod cart;
+pub mod other;

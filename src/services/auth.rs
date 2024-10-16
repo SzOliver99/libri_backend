@@ -1,7 +1,7 @@
 use crate::database::Database;
 use crate::models::user::User;
 
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{post, web, HttpResponse, Responder};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -72,20 +72,29 @@ pub async fn forgot_password(web::Form(form): web::Form<Info>) -> impl Responder
     };
     match User::forgot_password(&mut db, user).await {
         Ok(_) => HttpResponse::Ok().json("Forgot password successful"),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Forgot password failed: {:?}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Forgot password failed: {:?}", e))
+        }
     }
 }
 
 #[post("/reset-password")]
-pub async fn reset_password(query: web::Query<ResetPasswordQuery>, form: web::Form<ResetPassword>) -> impl Responder {
+pub async fn reset_password(
+    query: web::Query<ResetPasswordQuery>,
+    form: web::Form<ResetPassword>,
+) -> impl Responder {
     let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
     if form.password == form.repeat_password {
-        match User::reset_password(&mut db, query.token.to_string(), form.password.to_string()).await {
+        match User::reset_password(&mut db, query.token.to_string(), form.password.to_string())
+            .await
+        {
             Ok(_) => HttpResponse::Ok().json("Reset password successful"),
-            Err(e) => HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e)),
+            Err(e) => {
+                HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))
+            }
         }
     } else {
         HttpResponse::BadRequest().json("Passwords do not match")

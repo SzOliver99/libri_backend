@@ -1,6 +1,6 @@
+use crate::database::Database;
 use crate::models::book::Book;
 use crate::models::user::User;
-use crate::{database::Database, models::user};
 
 use actix_web::{get, post, web, HttpResponse, Responder};
 
@@ -16,7 +16,7 @@ pub async fn get_book_by_id(book_id: web::Path<i32>) -> impl Responder {
     }
 }
 
-#[post("/books")]
+#[post("/book")]
 pub async fn create_book(book: web::Json<Book>) -> impl Responder {
     let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
         .await
