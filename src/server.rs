@@ -26,6 +26,7 @@ impl Server {
                 .service(auth::signin)
                 .service(auth::forgot_password)
                 .service(auth::reset_password)
+                .service(book::get_books)
                 .service(book::get_book_by_id)
                 .service(book::create_book)
                 .service(book::buy_book)

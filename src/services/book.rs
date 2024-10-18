@@ -4,6 +4,18 @@ use crate::models::user::User;
 
 use actix_web::{get, post, web, HttpResponse, Responder};
 
+#[get("/books")]
+pub async fn get_books() -> impl Responder {
+    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match Book::find_all(&mut db).await {
+        Ok(books) => HttpResponse::Ok().json(books),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Error fetching books: {:?}", e)),
+    }
+}
+
 #[get("/book/{book_id}")]
 pub async fn get_book_by_id(book_id: web::Path<i32>) -> impl Responder {
     let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
