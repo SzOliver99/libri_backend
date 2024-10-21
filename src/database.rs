@@ -2,10 +2,10 @@
 use sqlx::{ConnectOptions, FromRow, MySql, MySqlConnection, Pool, Row};
 use std::error::Error;
 
-#[derive(FromRow, Debug)]
+#[derive(FromRow, Debug, Clone)]
 pub struct Database {
     pub pool: Pool<MySql>,
-    pub connection: MySqlConnection,
+    // pub connection: MySqlConnection,
 }
 
 impl Database {
@@ -25,6 +25,6 @@ impl Database {
             .connect()
             .await?;
 
-        Ok(Database { pool, connection })
+        Ok(Database { pool })
     }
 }

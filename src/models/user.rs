@@ -11,6 +11,7 @@ pub struct User {
     pub email: Option<String>,
     pub username: Option<String>,
     pub password: Option<String>,
+    pub group: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -62,6 +63,7 @@ impl User {
             email: user.email,
             username: user.username,
             password: Some(hashed_password),
+            group: None,
         })
     }
 
@@ -81,7 +83,7 @@ impl User {
             Some(hashed_user) => {
                 if password::verify_password(
                     &user.password.unwrap(),
-                    &hashed_user.password.as_ref().unwrap(),
+                    hashed_user.password.as_ref().unwrap(),
                 ) {
                     Ok(hashed_user)
                 } else {

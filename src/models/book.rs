@@ -66,6 +66,14 @@ impl Book {
         })
     }
 
+    pub async fn find_all(db: &mut Database) -> Result<Vec<Book>, Box<dyn Error>> {
+        let books = sqlx::query_as!(Book, "SELECT * FROM books")
+            .fetch_all(&db.pool)
+            .await?;
+
+        Ok(books)
+    }
+
     pub async fn find_by_id(db: &mut Database, book_id: i32) -> Result<Book, Box<dyn Error>> {
         let book = sqlx::query_as!(Book, "SELECT * FROM books WHERE id = ?", book_id)
             .fetch_one(&db.pool)

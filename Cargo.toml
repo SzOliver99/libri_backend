@@ -1,5 +1,5 @@
 [package]
-name = "libri_backend_sqlx"
+name = "libri_backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,7 +11,9 @@ sqlx = { version = "0.8.2", features = ["derive", "runtime-tokio-rustls", "mysql
 tokio = { version = "1.40.0", features = ["full"] }
 dotenv = "0.15.0"
 hex = "0.4.3"
-sha2 = "0.10.8"
 env_logger = "0.11.5"
 lettre = "0.11.9"
 rand = "0.8.5"
+argon2 = "0.5.3"
+jsonwebtoken = "9.3.0"
+chrono = "0.4.38"

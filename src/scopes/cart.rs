@@ -1,10 +1,24 @@
-use crate::database::Database;
-use crate::models::cart::Cart;
+use crate::{database::Database, models::cart::Cart};
+use actix_web::{web, HttpResponse, Responder, Scope};
 
-use actix_web::{delete, get, post, web, HttpResponse, Responder};
+pub fn cart_scope() -> Scope {
+    web::scope("/cart")
+        .route("/", web::post().to(create_cart))
+        .route("/{user_id}", web::get().to(get_cart))
+        .route(
+            "/{user_id}/book/{book_id}",
+            web::post().to(add_book_to_cart),
+        )
+        .route("/{user_id}", web::delete().to(delete_cart))
+        .route(
+            "/{user_id}/book/{book_id}",
+            web::delete().to(delete_book_from_cart),
+        )
+    // .route("/{id}", web::put().to(update_book))
+    // .route("/{id}", web::delete().to(delete_book))
+}
 
-#[post("/cart/{user_id}")]
-pub async fn create_cart(user_id: web::Path<i32>) -> impl Responder {
+async fn create_cart(user_id: web::Path<i32>) -> impl Responder {
     let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
@@ -16,8 +30,7 @@ pub async fn create_cart(user_id: web::Path<i32>) -> impl Responder {
     }
 }
 
-#[get("/cart/{user_id}")]
-pub async fn get_cart(user_id: web::Path<i32>) -> impl Responder {
+async fn get_cart(user_id: web::Path<i32>) -> impl Responder {
     let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
@@ -28,8 +41,7 @@ pub async fn get_cart(user_id: web::Path<i32>) -> impl Responder {
     }
 }
 
-#[post("/cart/{user_id}/book/{book_id}")]
-pub async fn add_book_to_cart(path: web::Path<(i32, i32)>) -> impl Responder {
+async fn add_book_to_cart(path: web::Path<(i32, i32)>) -> impl Responder {
     let (user_id, book_id) = path.into_inner();
     let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
         .await
@@ -43,8 +55,7 @@ pub async fn add_book_to_cart(path: web::Path<(i32, i32)>) -> impl Responder {
     }
 }
 
-#[delete("/cart/{user_id}")]
-pub async fn delete_cart(user_id: web::Path<i32>) -> impl Responder {
+async fn delete_cart(user_id: web::Path<i32>) -> impl Responder {
     let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
@@ -55,8 +66,7 @@ pub async fn delete_cart(user_id: web::Path<i32>) -> impl Responder {
     }
 }
 
-#[delete("/cart/{user_id}/book/{book_id}")]
-pub async fn delete_book_from_cart(path: web::Path<(i32, i32)>) -> impl Responder {
+async fn delete_book_from_cart(path: web::Path<(i32, i32)>) -> impl Responder {
     let (user_id, book_id) = path.into_inner();
     let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
         .await

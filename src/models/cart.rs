@@ -8,7 +8,19 @@ use std::error::Error;
 pub struct Cart {
     pub id: Option<i32>,
     pub user_id: i32,
-    pub books: Vec<Book>,
+    pub books: Vec<CartBook>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CartBook {
+    pub id: Option<i32>,
+    pub title: String,
+    pub author: String,
+    pub price: i32,
+    pub description: String,
+    pub published_date: String,
+    pub isbn: String,
+    pub quantity: i32,
 }
 
 impl Cart {
@@ -52,10 +64,9 @@ impl Cart {
 
         match cart {
             Some(cart) => {
-                let books = sqlx::query_as!(
-                    Book,
+                let books_with_quantity = sqlx::query!(
                     r#"
-                    SELECT book.*
+                    SELECT book.*, cart_items.quantity
                     FROM books book
                     JOIN cart_items ON book.id = cart_items.book_id
                     JOIN user_cart ON cart_items.cart_id = user_cart.id
@@ -65,6 +76,21 @@ impl Cart {
                 )
                 .fetch_all(&db.pool)
                 .await?;
+
+                let books = books_with_quantity
+                    .into_iter()
+                    .map(|row| CartBook {
+                        id: Some(row.id),
+                        title: row.title,
+                        author: row.author,
+                        price: row.price,
+                        description: row.description,
+                        published_date: row.published_date,
+                        isbn: row.isbn,
+                        quantity: row.quantity,
+                    })
+                    .collect();
+
                 Ok(Cart {
                     id: Some(cart.id),
                     user_id: cart.user_id,
@@ -137,20 +163,39 @@ impl Cart {
             .await?;
 
         if let Some(cart) = cart {
-            // Remove the book from cart_items
-            let result = sqlx::query!(
-                r#"DELETE FROM cart_items WHERE cart_id = ? AND book_id = ?"#,
+            // Get the current quantity of the book in the cart
+            let cart_item = sqlx::query!(
+                r#"SELECT quantity FROM cart_items WHERE cart_id = ? AND book_id = ?"#,
                 cart.id,
                 book_id
             )
-            .execute(&db.pool)
+            .fetch_optional(&db.pool)
             .await?;
 
-            if result.rows_affected() == 0 {
-                return Err("Book not found in the cart".into());
+            if let Some(item) = cart_item {
+                if item.quantity > 1 {
+                    // Decrease the quantity by 1
+                    sqlx::query!(
+                        r#"UPDATE cart_items SET quantity = quantity - 1 WHERE cart_id = ? AND book_id = ?"#,
+                        cart.id,
+                        book_id
+                    )
+                    .execute(&db.pool)
+                    .await?;
+                } else {
+                    // Remove the item if quantity is 1
+                    sqlx::query!(
+                        r#"DELETE FROM cart_items WHERE cart_id = ? AND book_id = ?"#,
+                        cart.id,
+                        book_id
+                    )
+                    .execute(&db.pool)
+                    .await?;
+                }
+                Ok(())
+            } else {
+                Err("Book not found in the cart".into())
             }
-
-            Ok(())
         } else {
             Err("User doesn't have a cart".into())
         }

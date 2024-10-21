@@ -1,13 +1,20 @@
-use hex;
-use sha2::{Digest, Sha512};
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
 
 pub fn hash_password(password: &str) -> String {
-    let mut hasher = Sha512::new();
-    hasher.update(password);
-    let result = hasher.finalize();
-    hex::encode(result)
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    argon2
+        .hash_password(password.as_bytes(), &salt)
+        .unwrap()
+        .to_string()
 }
 
 pub fn verify_password(password: &str, hashed_password: &str) -> bool {
-    hash_password(password) == hashed_password
+    let parsed_hash = PasswordHash::new(hashed_password).unwrap();
+    Argon2::default()
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .is_ok()
 }
