@@ -10,6 +10,7 @@ pub struct Book {
     pub author: String,
     pub price: i32,
     pub description: String,
+    pub image_src: Option<String>,
     pub published_date: String,
     pub isbn: String,
 }
@@ -20,18 +21,19 @@ impl Book {
         if book.title.is_empty()
             || book.author.is_empty()
             || book.description.is_empty()
+            || book.image_src.is_none()
             || book.published_date.is_empty()
             || book.isbn.is_empty()
         {
             return Err(
-                "All fields (title, author, price, description, published_date, isbn) are required"
+                "All fields (title, author, price, description, image_src, published_date, isbn) are required"
                     .into(),
             );
         }
 
         // Check if the book title or isbn already exists
         let existing_book = sqlx::query!(
-            "SELECT * FROM books WHERE title = ? or isbn = ?",
+            r#"SELECT * FROM books WHERE title = ? or isbn = ?"#,
             book.title,
             book.isbn
         )
@@ -43,11 +45,12 @@ impl Book {
         }
 
         let result = sqlx::query!(
-            "INSERT INTO books(title, author, price, description, published_date, isbn) VALUES(?, ?, ?, ?, ?, ?)",
+            r#"INSERT INTO books(title, author, price, description, image_src, published_date, isbn) VALUES(?, ?, ?, ?, ?, ?, ?)"#,
             book.title,
             book.author,
             book.price,
             book.description,
+            book.image_src.clone().unwrap_or("".to_string()),
             book.published_date,
             book.isbn
         )
@@ -61,13 +64,14 @@ impl Book {
             author: book.author,
             price: book.price,
             description: book.description,
+            image_src: book.image_src,
             published_date: book.published_date,
             isbn: book.isbn,
         })
     }
 
     pub async fn find_all(db: &mut Database) -> Result<Vec<Book>, Box<dyn Error>> {
-        let books = sqlx::query_as!(Book, "SELECT * FROM books")
+        let books = sqlx::query_as!(Book, r#"SELECT * FROM books"#)
             .fetch_all(&db.pool)
             .await?;
 
@@ -75,7 +79,7 @@ impl Book {
     }
 
     pub async fn find_by_id(db: &mut Database, book_id: i32) -> Result<Book, Box<dyn Error>> {
-        let book = sqlx::query_as!(Book, "SELECT * FROM books WHERE id = ?", book_id)
+        let book = sqlx::query_as!(Book, r#"SELECT * FROM books WHERE id = ?"#, book_id)
             .fetch_one(&db.pool)
             .await?;
 
@@ -88,7 +92,7 @@ impl Book {
         book_id: i32,
     ) -> Result<(), Box<dyn Error>> {
         sqlx::query!(
-            "INSERT INTO user_books(user_id, book_id, status) VALUES(?, ?, ?)",
+            r#"INSERT INTO user_books(user_id, book_id, status) VALUES(?, ?, ?)"#,
             user_id,
             book_id,
             "purchased"

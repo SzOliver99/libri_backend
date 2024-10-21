@@ -1,5 +1,6 @@
 use super::book::Book;
-use crate::database::Database;
+use crate::{database::Database};
+use crate::utils::utils;
 
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -25,6 +26,10 @@ pub struct CartBook {
 
 impl Cart {
     pub async fn new(db: &mut Database, user_id: i32) -> Result<Self, Box<dyn Error>> {
+        if !utils::is_user_exists(db, user_id).await? {
+            return Err("User not found".into());
+        }
+
         // Check if user has a cart
         let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE user_id = ?"#, user_id)
             .fetch_optional(&db.pool)
@@ -36,7 +41,7 @@ impl Cart {
 
         // Create a new cart
         let result = sqlx::query!(
-            r#"INSERT INTO user_cart (user_id) VALUES (?) RETURNING *"#,
+            r#"INSERT INTO user_cart (user_id) VALUES (?)"#,
             user_id
         )
         .execute(&db.pool)

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS `books` (
   `author` varchar(50) NOT NULL,
   `price` int(5) NOT NULL,
   `description` varchar(255) NOT NULL,
+  `image_src` varchar(255) NOT NULL DEFAULT '',
   `published_date` varchar(255) NOT NULL,
   `isbn` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)

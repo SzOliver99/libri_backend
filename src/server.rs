@@ -1,7 +1,6 @@
 use crate::database::Database;
 
-// use crate::services::{auth, book, cart};
-use crate::scopes::{self, user};
+use crate::scopes;
 
 use actix_web::web;
 use actix_web::{middleware::Logger, App, HttpServer};
@@ -27,24 +26,10 @@ impl Server {
         HttpServer::new(move || {
             App::new()
                 .wrap(Logger::default())
-                // .app_data(web::Data::new(db.clone())) // TODO: Add database directly to the server
                 .app_data(web::Data::<String>::new(secret_key.clone()))
                 .service(scopes::user::user_scope())
                 .service(scopes::book::book_scope())
                 .service(scopes::cart::cart_scope())
-            // .service(auth::signup)
-            // .service(auth::signin)
-            // .service(auth::forgot_password)
-            // .service(auth::reset_password)
-            // .service(book::get_book_by_id)
-            // .service(book::create_book)
-            // .service(book::buy_book)
-            // .service(book::get_user_books)
-            // .service(cart::create_cart)
-            // .service(cart::get_cart)
-            // .service(cart::add_book_to_cart)
-            // .service(cart::delete_book_from_cart)
-            // .service(cart::delete_cart)
         })
         .bind(format!("127.0.0.1:{port}"))?
         .run()
