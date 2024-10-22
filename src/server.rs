@@ -9,7 +9,8 @@ use env_logger::Env;
 pub struct Server;
 
 impl Server {
-    pub async fn run(port: &str) -> std::io::Result<()> {
+    #[actix_web::main]
+    pub async fn run(port: u16) -> std::io::Result<()> {
         // Initialize logger if -log flag is passed
         if std::env::args().any(|arg| arg == "-log") {
             env_logger::init_from_env(Env::default().default_filter_or("info"));
@@ -31,7 +32,7 @@ impl Server {
                 .service(scopes::book::book_scope())
                 .service(scopes::cart::cart_scope())
         })
-        .bind(format!("127.0.0.1:{port}"))?
+        .bind(("0.0.0.0", port))?
         .run()
         .await
     }
