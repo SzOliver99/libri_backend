@@ -55,7 +55,7 @@ impl Cart {
         Ok(())
     }
 
-    pub(crate) async fn add_book_to_cart(
+    pub(crate) async fn increment_book_quantity(
         db: &mut Database,
         user_id: i32,
         book_id: i32,
@@ -65,7 +65,7 @@ impl Cart {
             .fetch_optional(&db.pool)
             .await?;
         if cart.is_none() {
-            // If user doesn't have a cart, create one
+            // Create a new cart if user doesn't have one
             Self::create(db, user_id).await?;
         }
 
@@ -110,7 +110,7 @@ impl Cart {
         Ok(())
     }
 
-    pub async fn remove_book_from_cart(
+    pub async fn decrease_book_quantity(
         db: &mut Database,
         user_id: i32,
         book_id: i32,
@@ -119,40 +119,35 @@ impl Cart {
             .fetch_optional(&db.pool)
             .await?;
 
+        // Check if user has a cart
         if let Some(cart) = cart {
-            // Get the current quantity of the book in the cart
-            let cart_item = sqlx::query!(
-                r#"SELECT quantity FROM cart_items WHERE cartId = ? AND bookId = ?"#,
+            sqlx::query!(
+                r#"
+                UPDATE cart_items
+                SET quantity = CASE
+                    WHEN quantity > 1 THEN quantity - 1
+                    ELSE quantity
+                END
+                WHERE cartId = ? AND bookId = ?
+                "#,
                 cart.id,
                 book_id
             )
-            .fetch_optional(&db.pool)
+            .execute(&db.pool)
             .await?;
 
-            if let Some(item) = cart_item {
-                if item.quantity > 1 {
-                    // Decrease the quantity by 1
-                    sqlx::query!(
-                        r#"UPDATE cart_items SET quantity = quantity - 1 WHERE cartId = ? AND bookId = ?"#,
-                        cart.id,
-                        book_id
-                    )
-                    .execute(&db.pool)
-                    .await?;
-                } else {
-                    // Remove the item if quantity is 1
-                    sqlx::query!(
-                        r#"DELETE FROM cart_items WHERE cartId = ? AND bookId = ?"#,
-                        cart.id,
-                        book_id
-                    )
-                    .execute(&db.pool)
-                    .await?;
-                }
-                Ok(())
-            } else {
-                Err("Book not found in the cart".into())
-            }
+            // If quantity becomes 0, remove the item
+            sqlx::query!(
+                r#"
+                DELETE FROM cart_items
+                WHERE cartId = ? AND bookId = ? AND quantity = 0
+                "#,
+                cart.id,
+                book_id
+            )
+            .execute(&db.pool)
+            .await?;
+            Ok(())
         } else {
             Err("User doesn't have a cart".into())
         }

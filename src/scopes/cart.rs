@@ -12,10 +12,8 @@ struct BookCartRequest {
 pub fn cart_scope() -> Scope {
     web::scope("/cart")
         .route("/{user_id}", web::delete().to(delete_user_cart))
-        .route("/book", web::post().to(add_book_to_cart))
-        .route("/book", web::delete().to(delete_book_from_cart))
-    // .route("/{id}", web::put().to(update_book))
-    // .route("/{id}", web::delete().to(delete_book))
+        .route("/book", web::post().to(increment_book_quantity))
+        .route("/book", web::delete().to(decrease_book_quantity))
 }
 
 async fn delete_user_cart(user_id: web::Path<i32>) -> impl Responder {
@@ -29,12 +27,12 @@ async fn delete_user_cart(user_id: web::Path<i32>) -> impl Responder {
     }
 }
 
-async fn add_book_to_cart(data: web::Json<BookCartRequest>) -> impl Responder {
+async fn increment_book_quantity(data: web::Json<BookCartRequest>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    match Cart::add_book_to_cart(&mut db, data.user_id, data.book_id).await {
+    match Cart::increment_book_quantity(&mut db, data.user_id, data.book_id).await {
         Ok(_) => HttpResponse::Ok().json("Book added to cart"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error adding book to cart: {:?}", e))
@@ -42,12 +40,12 @@ async fn add_book_to_cart(data: web::Json<BookCartRequest>) -> impl Responder {
     }
 }
 
-async fn delete_book_from_cart(data: web::Json<BookCartRequest>) -> impl Responder {
+async fn decrease_book_quantity(data: web::Json<BookCartRequest>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    match Cart::remove_book_from_cart(&mut db, data.user_id, data.book_id).await {
+    match Cart::decrease_book_quantity(&mut db, data.user_id, data.book_id).await {
         Ok(_) => HttpResponse::Ok().json("Book deleted from cart"),
         Err(e) => HttpResponse::InternalServerError()
             .json(format!("Error deleting book from cart: {:?}", e)),
