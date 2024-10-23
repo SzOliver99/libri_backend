@@ -11,24 +11,11 @@ struct BookCartRequest {
 
 pub fn cart_scope() -> Scope {
     web::scope("/cart")
-        .route("/{user_id}", web::post().to(create_user_cart))
         .route("/{user_id}", web::delete().to(delete_user_cart))
         .route("/book", web::post().to(add_book_to_cart))
         .route("/book", web::delete().to(delete_book_from_cart))
     // .route("/{id}", web::put().to(update_book))
     // .route("/{id}", web::delete().to(delete_book))
-}
-
-async fn create_user_cart(user_id: web::Path<i32>) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    println!("Creating cart for user: {}", user_id);
-    match Cart::create(&mut db, user_id.into_inner()).await {
-        Ok(_) => HttpResponse::Created().json("Cart created"),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error creating cart: {:?}", e)),
-    }
 }
 
 async fn delete_user_cart(user_id: web::Path<i32>) -> impl Responder {

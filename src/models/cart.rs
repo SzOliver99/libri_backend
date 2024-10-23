@@ -60,14 +60,16 @@ impl Cart {
         user_id: i32,
         book_id: i32,
     ) -> Result<(), Box<dyn Error>> {
+        // Check if user has a cart
         let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE userId = ?"#, user_id)
             .fetch_optional(&db.pool)
             .await?;
         if cart.is_none() {
-            return Err("User doesn't have a cart".into());
+            // If user doesn't have a cart, create one
+            Self::create(db, user_id).await?;
         }
-        let cart_id = cart.unwrap().id;
 
+        // Check if book exists
         let book = sqlx::query!(r#"SELECT * FROM books WHERE id = ?"#, book_id)
             .fetch_optional(&db.pool)
             .await?;
@@ -77,6 +79,7 @@ impl Cart {
         }
 
         // Check if the book is already in the cart
+        let cart_id = cart.unwrap().id;
         let existing_item = sqlx::query!(
             r#"SELECT * FROM cart_items WHERE cartId = ? AND bookId = ?"#,
             cart_id,
