@@ -13,14 +13,12 @@ pub struct Cart {
     pub books: Vec<CartBook>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, FromRow)]
 pub struct CartBook {
     pub id: Option<i32>,
     pub title: String,
     pub author: String,
     pub price: i32,
-    pub description: String,
-    pub published_date: String,
     pub isbn: String,
     pub quantity: i32,
 }
@@ -48,7 +46,7 @@ impl Cart {
         Ok(())
     }
 
-    pub async fn remove_cart(db: &mut Database, user_id: i32) -> Result<(), Box<dyn Error>> {
+    pub async fn delete_cart(db: &mut Database, user_id: i32) -> Result<(), Box<dyn Error>> {
         sqlx::query!(r#"DELETE FROM user_cart WHERE userId = ?"#, user_id)
             .execute(&db.pool)
             .await?;
@@ -131,10 +129,5 @@ impl Cart {
         } else {
             Err("User doesn't have a cart".into())
         }
-    }
-
-    #[allow(dead_code)]
-    pub fn get_total_price(&self) -> i32 {
-        self.books.iter().map(|book| book.price).sum()
     }
 }

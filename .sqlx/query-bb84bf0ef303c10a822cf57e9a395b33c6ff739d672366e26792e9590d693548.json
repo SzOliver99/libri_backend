@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\n                    SELECT book.*, cart_items.quantity\n                    FROM books book\n                    JOIN cart_items ON book.id = cart_items.bookId\n                    JOIN user_cart ON cart_items.cartId = user_cart.id\n                    WHERE user_cart.userId = ?\n                    ",
+  "query": "\n                    SELECT book.id, book.title, book.author, book.price, book.isbn, cart_items.quantity\n                    FROM books book\n                    JOIN cart_items ON book.id = cart_items.bookId\n                    JOIN user_cart ON cart_items.cartId = user_cart.id\n                    WHERE user_cart.userId = ?\n                    ",
   "describe": {
     "columns": [
       {
@@ -41,33 +41,6 @@
       },
       {
         "ordinal": 4,
-        "name": "description",
-        "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
-          "max_size": 1020
-        }
-      },
-      {
-        "ordinal": 5,
-        "name": "imageSrc",
-        "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL",
-          "max_size": 1020
-        }
-      },
-      {
-        "ordinal": 6,
-        "name": "publishedDate",
-        "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
-          "max_size": 1020
-        }
-      },
-      {
-        "ordinal": 7,
         "name": "isbn",
         "type_info": {
           "type": "VarString",
@@ -76,7 +49,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 5,
         "name": "quantity",
         "type_info": {
           "type": "Long",
@@ -94,11 +67,8 @@
       false,
       false,
       false,
-      false,
-      false,
-      false,
       false
     ]
   },
-  "hash": "8b00e108ca965ff3acd425046de9e673e41cdf18bf1dee191e8a1002807579d7"
+  "hash": "bb84bf0ef303c10a822cf57e9a395b33c6ff739d672366e26792e9590d693548"
 }

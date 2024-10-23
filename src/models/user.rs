@@ -143,9 +143,10 @@ impl User {
 
         match cart {
             Some(cart) => {
-                let books_with_quantity = sqlx::query!(
+                let books = sqlx::query_as!(
+                    CartBook,
                     r#"
-                    SELECT book.*, cart_items.quantity
+                    SELECT book.id, book.title, book.author, book.price, book.isbn, cart_items.quantity
                     FROM books book
                     JOIN cart_items ON book.id = cart_items.bookId
                     JOIN user_cart ON cart_items.cartId = user_cart.id
@@ -155,20 +156,6 @@ impl User {
                 )
                 .fetch_all(&db.pool)
                 .await?;
-
-                let books = books_with_quantity
-                    .into_iter()
-                    .map(|row| CartBook {
-                        id: Some(row.id),
-                        title: row.title,
-                        author: row.author,
-                        price: row.price,
-                        description: row.description,
-                        published_date: row.publishedDate,
-                        isbn: row.isbn,
-                        quantity: row.quantity,
-                    })
-                    .collect();
 
                 Ok(Cart {
                     id: Some(cart.id),

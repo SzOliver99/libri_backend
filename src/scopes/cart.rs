@@ -21,7 +21,7 @@ async fn delete_user_cart(user_id: web::Path<i32>) -> impl Responder {
         .await
         .unwrap();
 
-    match Cart::remove_cart(&mut db, user_id.into_inner()).await {
+    match Cart::delete_cart(&mut db, user_id.into_inner()).await {
         Ok(_) => HttpResponse::Ok().json("Cart deleted"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error deleting cart: {:?}", e)),
     }
