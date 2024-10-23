@@ -176,7 +176,13 @@ impl User {
                     books,
                 })
             }
-            None => Err("User doesn't have a cart".into()),
+            None => {
+                // Create a new cart if user doesn't have one
+                Cart::create(db, user_id).await?;
+
+                // Get the newly created cart
+                Box::pin(Self::get_cart(db, user_id)).await
+            }
         }
     }
 
