@@ -16,7 +16,7 @@ pub fn user_scope() -> Scope {
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_password))
         .route("/{user_id}/books", web::get().to(get_user_books))
-        .route("/{user_id}", web::get().to(get_user_cart))
+        .route("/{user_id}/cart", web::get().to(get_user_cart))
 }
 
 #[derive(Deserialize)]
@@ -50,6 +50,15 @@ async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl R
         }),
         Err(e) => HttpResponse::Unauthorized().json(format!("Signin failed: {}", e)),
     }
+}
+
+#[derive(Serialize)]
+struct ProtectedResponse {
+    id: usize,
+}
+
+async fn protected_route(auth_token: AuthenticationToken) -> impl Responder {
+    HttpResponse::Ok().json(ProtectedResponse { id: auth_token.id })
 }
 
 async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
@@ -145,18 +154,4 @@ async fn reset_password(
     } else {
         HttpResponse::BadRequest().json("Passwords do not match")
     }
-}
-
-#[derive(Serialize)]
-struct ProtectedResponse {
-    message: String,
-    id: usize,
-}
-
-// Example on how it probably should be handled
-async fn protected_route(auth_token: AuthenticationToken) -> impl Responder {
-    HttpResponse::Ok().json(ProtectedResponse {
-        message: "Authorized".to_owned(),
-        id: auth_token.id,
-    })
 }

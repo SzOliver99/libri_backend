@@ -11,15 +11,15 @@ struct BookCartRequest {
 
 pub fn cart_scope() -> Scope {
     web::scope("/cart")
-        .route("/{user_id}", web::post().to(create_cart))
-        .route("/{user_id}", web::delete().to(delete_cart))
+        .route("/{user_id}", web::post().to(create_user_cart))
+        .route("/{user_id}", web::delete().to(delete_user_cart))
         .route("/book", web::post().to(add_book_to_cart))
         .route("/book", web::delete().to(delete_book_from_cart))
     // .route("/{id}", web::put().to(update_book))
     // .route("/{id}", web::delete().to(delete_book))
 }
 
-async fn create_cart(user_id: web::Path<i32>) -> impl Responder {
+async fn create_user_cart(user_id: web::Path<i32>) -> impl Responder {
     let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
@@ -28,6 +28,17 @@ async fn create_cart(user_id: web::Path<i32>) -> impl Responder {
     match Cart::create(&mut db, user_id.into_inner()).await {
         Ok(_) => HttpResponse::Created().json("Cart created"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error creating cart: {:?}", e)),
+    }
+}
+
+async fn delete_user_cart(user_id: web::Path<i32>) -> impl Responder {
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match Cart::remove_cart(&mut db, user_id.into_inner()).await {
+        Ok(_) => HttpResponse::Ok().json("Cart deleted"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Error deleting cart: {:?}", e)),
     }
 }
 
@@ -41,17 +52,6 @@ async fn add_book_to_cart(data: web::Json<BookCartRequest>) -> impl Responder {
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error adding book to cart: {:?}", e))
         }
-    }
-}
-
-async fn delete_cart(user_id: web::Path<i32>) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match Cart::remove_cart(&mut db, user_id.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().json("Cart deleted"),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error deleting cart: {:?}", e)),
     }
 }
 
