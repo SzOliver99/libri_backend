@@ -118,7 +118,7 @@ impl Cart {
             sqlx::query!(
                 r#"
                 DELETE FROM cart_items
-                WHERE cartId = ? AND bookId = ? AND quantity = 0
+                WHERE cartId = ? AND bookId = ? AND quantity = 1
                 "#,
                 cart.id,
                 book_id
