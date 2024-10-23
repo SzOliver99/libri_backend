@@ -13,8 +13,6 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo +nightly chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
-ENV SQLX_OFFLINE=true
-RUN cargo sqlx prepare --workspace
 RUN cargo +nightly build --release --bin libri_backend
 
 # We do not need the Rust toolchain to run the binary!
