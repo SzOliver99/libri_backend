@@ -12,7 +12,7 @@ struct BookCartRequest {
 pub fn cart_scope() -> Scope {
     web::scope("/cart")
         .route("/{user_id}", web::delete().to(delete_user_cart))
-        .route("/book", web::post().to(increment_book_quantity))
+        .route("/book", web::put().to(increment_book_quantity))
         .route("/book", web::delete().to(decrease_book_quantity))
 }
 
