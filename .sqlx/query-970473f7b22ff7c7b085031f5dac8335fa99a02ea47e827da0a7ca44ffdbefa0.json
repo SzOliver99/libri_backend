@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO user_books(userId, bookId, status) VALUES(?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "970473f7b22ff7c7b085031f5dac8335fa99a02ea47e827da0a7ca44ffdbefa0"
+}

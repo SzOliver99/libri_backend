@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO reset_tokens (userId, token, tokenExpires) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "8b3afc0db3f191c98a35d713b0eb0692e727a297b1d046f45eece5f5868077ba"
+}

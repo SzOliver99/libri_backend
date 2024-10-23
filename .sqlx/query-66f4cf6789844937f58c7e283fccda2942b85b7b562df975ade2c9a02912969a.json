@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE cart_items SET quantity = quantity - 1 WHERE cartId = ? AND bookId = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "66f4cf6789844937f58c7e283fccda2942b85b7b562df975ade2c9a02912969a"
+}

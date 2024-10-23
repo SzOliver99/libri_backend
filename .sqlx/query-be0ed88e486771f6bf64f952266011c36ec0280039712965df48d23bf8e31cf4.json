@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT quantity FROM cart_items WHERE cartId = ? AND bookId = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "quantity",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL",
+          "max_size": 11
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "be0ed88e486771f6bf64f952266011c36ec0280039712965df48d23bf8e31cf4"
+}
