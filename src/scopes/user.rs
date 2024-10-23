@@ -6,6 +6,7 @@ use crate::{
 };
 use actix_web::{web, HttpResponse, Responder, Scope};
 use serde::{Deserialize, Serialize};
+use std::env;
 
 pub fn user_scope() -> Scope {
     web::scope("/user")
@@ -14,7 +15,7 @@ pub fn user_scope() -> Scope {
         .route("/sign-up", web::post().to(sign_up))
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_password))
-        .route("/{user_id}/buy-book/{book_id}", web::post().to(buy_book))
+        .route("/{user_id}/buy-book/{book_id}", web::patch().to(buy_book))
         .route("/{user_id}/books", web::get().to(get_user_books))
 }
 
@@ -32,7 +33,7 @@ struct LoginResponse {
 }
 
 async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -53,16 +54,16 @@ async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl R
     }
 }
 
-async fn sign_up(web::Form(form): web::Form<UserInfo>) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
     let user = User {
         id: None,
-        email: form.email,
-        username: form.username,
-        password: form.password,
+        email: data.email.clone(),
+        username: data.username.clone(),
+        password: data.password.clone(),
         group: None,
     };
     match User::new(&mut db, user).await {
@@ -73,7 +74,7 @@ async fn sign_up(web::Form(form): web::Form<UserInfo>) -> impl Responder {
 
 async fn buy_book(path: web::Path<(i32, i32)>) -> impl Responder {
     let (user_id, book_id) = path.into_inner();
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -84,7 +85,7 @@ async fn buy_book(path: web::Path<(i32, i32)>) -> impl Responder {
 }
 
 async fn get_user_books(user_id: web::Path<i32>) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -97,7 +98,7 @@ async fn get_user_books(user_id: web::Path<i32>) -> impl Responder {
 }
 
 async fn forgot_password(web::Form(form): web::Form<UserInfo>) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -131,7 +132,7 @@ async fn reset_password(
     query: web::Query<ResetPasswordQuery>,
     form: web::Form<ResetPassword>,
 ) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 

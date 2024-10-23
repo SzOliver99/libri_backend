@@ -1,5 +1,6 @@
 use crate::{database::Database, models::book::Book};
 use actix_web::{web, HttpResponse, Responder, Scope};
+use std::env;
 
 pub fn book_scope() -> Scope {
     web::scope("/books")
@@ -11,7 +12,7 @@ pub fn book_scope() -> Scope {
 }
 
 async fn create_book(book: web::Json<Book>) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -22,7 +23,7 @@ async fn create_book(book: web::Json<Book>) -> impl Responder {
 }
 
 async fn get_books() -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -31,7 +32,7 @@ async fn get_books() -> impl Responder {
 }
 
 async fn get_book_by_id(book_id: web::Path<i32>) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 

@@ -1,5 +1,6 @@
 use crate::{database::Database, models::cart::Cart};
 use actix_web::{web, HttpResponse, Responder, Scope};
+use std::env;
 
 pub fn cart_scope() -> Scope {
     web::scope("/cart")
@@ -19,7 +20,7 @@ pub fn cart_scope() -> Scope {
 }
 
 async fn create_cart(user_id: web::Path<i32>) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -31,7 +32,7 @@ async fn create_cart(user_id: web::Path<i32>) -> impl Responder {
 }
 
 async fn get_cart(user_id: web::Path<i32>) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -43,7 +44,7 @@ async fn get_cart(user_id: web::Path<i32>) -> impl Responder {
 
 async fn add_book_to_cart(path: web::Path<(i32, i32)>) -> impl Responder {
     let (user_id, book_id) = path.into_inner();
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -56,7 +57,7 @@ async fn add_book_to_cart(path: web::Path<(i32, i32)>) -> impl Responder {
 }
 
 async fn delete_cart(user_id: web::Path<i32>) -> impl Responder {
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
@@ -68,7 +69,7 @@ async fn delete_cart(user_id: web::Path<i32>) -> impl Responder {
 
 async fn delete_book_from_cart(path: web::Path<(i32, i32)>) -> impl Responder {
     let (user_id, book_id) = path.into_inner();
-    let mut db = Database::new(dotenv::var("DATABASE_URL").unwrap())
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
