@@ -24,7 +24,7 @@ struct DecodeBody {
     token: String,
 }
 
-async fn decode_token(
+async fn _decode_token(
     body: web::Json<DecodeBody>,
     secret: web::Data<String>,
 ) -> Result<usize, JwtError> {

@@ -24,7 +24,7 @@ pub enum BookStatus {
 }
 
 impl Book {
-    pub async fn new(db: &mut Database, book: Book) -> Result<(), Box<dyn Error>> {
+    pub async fn create(db: &mut Database, book: Book) -> Result<(), Box<dyn Error>> {
         // Check if any required fields are null or empty
         if book.title.is_empty()
             || book.author.is_empty()
@@ -91,7 +91,7 @@ impl Book {
         Ok(book)
     }
 
-    pub async fn buy_book(
+    pub async fn _buy_book(
         db: &mut Database,
         user_id: i32,
         book_id: i32,

@@ -111,7 +111,7 @@ impl User {
                         username: hashed_user.username,
                         email: hashed_user.email,
                         password: hashed_user.password,
-                        group: hashed_user.group.into(),
+                        group: hashed_user.group,
                     })
                 } else {
                     Err("Invalid password".into())

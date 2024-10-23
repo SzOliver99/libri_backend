@@ -26,7 +26,7 @@ pub struct CartBook {
 }
 
 impl Cart {
-    pub async fn new(db: &mut Database, user_id: i32) -> Result<Self, Box<dyn Error>> {
+    pub async fn create(db: &mut Database, user_id: i32) -> Result<(), Box<dyn Error>> {
         if !utils::is_user_exists(db, user_id).await? {
             return Err("User not found".into());
         }
@@ -41,16 +41,11 @@ impl Cart {
         }
 
         // Create a new cart
-        let result = sqlx::query!(r#"INSERT INTO user_cart (userId) VALUES (?)"#, user_id)
+        sqlx::query!(r#"INSERT INTO user_cart (userId) VALUES (?)"#, user_id)
             .execute(&db.pool)
             .await?;
 
-        let id = result.last_insert_id() as i32;
-        Ok(Self {
-            id: Some(id),
-            user_id,
-            books: Vec::new(),
-        })
+        Ok(())
     }
 
     pub async fn remove_cart(db: &mut Database, user_id: i32) -> Result<(), Box<dyn Error>> {

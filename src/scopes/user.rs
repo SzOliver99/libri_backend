@@ -1,10 +1,7 @@
 use crate::{
     database::Database,
     extractors::authentication_token::AuthenticationToken,
-    models::{
-        book::Book,
-        user::{User, UserGroup},
-    },
+    models::user::{User, UserGroup},
     utils::jwt::encode_token,
 };
 use actix_web::{web, HttpResponse, Responder, Scope};
@@ -31,7 +28,6 @@ struct UserInfo {
 
 #[derive(Serialize)]
 struct LoginResponse {
-    message: String,
     token: String,
 }
 
@@ -50,7 +46,6 @@ async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl R
 
     match User::login_with_password(&mut db, user).await {
         Ok(logged_in_user) => HttpResponse::Ok().json(LoginResponse {
-            message: "Signin successful".to_owned(),
             token: encode_token(logged_in_user.id.unwrap() as usize, secret).await,
         }),
         Err(e) => HttpResponse::Unauthorized().json(format!("Signin failed: {}", e)),
@@ -70,7 +65,7 @@ async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
         group: UserGroup::User,
     };
     match User::new(&mut db, user).await {
-        Ok(_) => HttpResponse::Ok().json("Signup successful"),
+        Ok(_) => HttpResponse::Created().json("Signup successful"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Signup failed: {:?}", e)),
     }
 }

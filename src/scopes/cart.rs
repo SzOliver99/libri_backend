@@ -25,8 +25,8 @@ async fn create_cart(user_id: web::Path<i32>) -> impl Responder {
         .unwrap();
 
     println!("Creating cart for user: {}", user_id);
-    match Cart::new(&mut db, user_id.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().json("Cart created"),
+    match Cart::create(&mut db, user_id.into_inner()).await {
+        Ok(_) => HttpResponse::Created().json("Cart created"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error creating cart: {:?}", e)),
     }
 }

@@ -16,8 +16,8 @@ async fn create_book(book: web::Json<Book>) -> impl Responder {
         .await
         .unwrap();
 
-    match Book::new(&mut db, book.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().json("Book created"),
+    match Book::create(&mut db, book.into_inner()).await {
+        Ok(_) => HttpResponse::Created().json("Book created"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error creating book: {:?}", e)),
     }
 }
