@@ -1,9 +1,11 @@
 use crate::database::Database;
 
 use serde::{Deserialize, Serialize};
+use sqlx::prelude::FromRow;
 use std::error::Error;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[sqlx(rename_all = "camelCase")]
 pub struct Book {
     pub id: Option<i32>,
     pub title: String,
@@ -15,8 +17,14 @@ pub struct Book {
     pub isbn: String,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum BookStatus {
+    Purchased,
+    Borrowed,
+}
+
 impl Book {
-    pub async fn new(db: &mut Database, book: Book) -> Result<Book, Box<dyn Error>> {
+    pub async fn new(db: &mut Database, book: Book) -> Result<(), Box<dyn Error>> {
         // Check if any required fields are null or empty
         if book.title.is_empty()
             || book.author.is_empty()
@@ -26,7 +34,7 @@ impl Book {
             || book.isbn.is_empty()
         {
             return Err(
-                "All fields (title, author, price, description, image_src, published_date, isbn) are required"
+                "All fields (title, author, price, description, imageSrc, publishedDate, isbn) are required"
                     .into(),
             );
         }
@@ -44,8 +52,8 @@ impl Book {
             return Err("Book already exists".into());
         }
 
-        let result = sqlx::query!(
-            r#"INSERT INTO books(title, author, price, description, image_src, published_date, isbn) VALUES(?, ?, ?, ?, ?, ?, ?)"#,
+        sqlx::query!(
+            r#"INSERT INTO books(title, author, price, description, imageSrc, publishedDate, isbn) VALUES(?, ?, ?, ?, ?, ?, ?)"#,
             book.title,
             book.author,
             book.price,
@@ -57,31 +65,28 @@ impl Book {
         .execute(&db.pool)
         .await?;
 
-        let id = result.last_insert_id() as i32;
-        Ok(Book {
-            id: Some(id),
-            title: book.title,
-            author: book.author,
-            price: book.price,
-            description: book.description,
-            image_src: book.image_src,
-            published_date: book.published_date,
-            isbn: book.isbn,
-        })
+        Ok(())
     }
 
-    pub async fn find_all(db: &mut Database) -> Result<Vec<Book>, Box<dyn Error>> {
-        let books = sqlx::query_as!(Book, r#"SELECT * FROM books"#)
-            .fetch_all(&db.pool)
-            .await?;
+    pub async fn get_all(db: &mut Database) -> Result<Vec<Book>, Box<dyn Error>> {
+        let books = sqlx::query_as!(
+            Book,
+            r#"SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books"#
+        )
+        .fetch_all(&db.pool)
+        .await?;
 
         Ok(books)
     }
 
-    pub async fn find_by_id(db: &mut Database, book_id: i32) -> Result<Book, Box<dyn Error>> {
-        let book = sqlx::query_as!(Book, r#"SELECT * FROM books WHERE id = ?"#, book_id)
-            .fetch_one(&db.pool)
-            .await?;
+    pub async fn get_by_id(db: &mut Database, book_id: i32) -> Result<Book, Box<dyn Error>> {
+        let book = sqlx::query_as!(
+            Book,
+            r#"SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books WHERE id = ?"#,
+            book_id
+        )
+        .fetch_one(&db.pool)
+        .await?;
 
         Ok(book)
     }
@@ -92,7 +97,7 @@ impl Book {
         book_id: i32,
     ) -> Result<(), Box<dyn Error>> {
         sqlx::query!(
-            r#"INSERT INTO user_books(user_id, book_id, status) VALUES(?, ?, ?)"#,
+            r#"INSERT INTO user_books(userId, bookId, status) VALUES(?, ?, ?)"#,
             user_id,
             book_id,
             "purchased"

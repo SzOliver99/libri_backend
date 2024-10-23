@@ -27,7 +27,7 @@ async fn get_books() -> impl Responder {
         .await
         .unwrap();
 
-    let books = Book::find_all(&mut db).await.unwrap();
+    let books = Book::get_all(&mut db).await.unwrap();
     HttpResponse::Ok().json(books)
 }
 
@@ -36,7 +36,7 @@ async fn get_book_by_id(book_id: web::Path<i32>) -> impl Responder {
         .await
         .unwrap();
 
-    match Book::find_by_id(&mut db, book_id.into_inner()).await {
+    match Book::get_by_id(&mut db, book_id.into_inner()).await {
         Ok(book) => HttpResponse::Ok().json(book),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error fetching book: {:?}", e)),
     }

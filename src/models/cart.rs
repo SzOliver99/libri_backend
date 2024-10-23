@@ -1,18 +1,19 @@
-use super::book::Book;
-use crate::{database::Database};
+use crate::database::Database;
 use crate::utils::utils;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+use sqlx::prelude::FromRow;
 use std::error::Error;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, FromRow)]
+#[sqlx(rename_all = "camelCase")]
 pub struct Cart {
     pub id: Option<i32>,
     pub user_id: i32,
     pub books: Vec<CartBook>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 pub struct CartBook {
     pub id: Option<i32>,
     pub title: String,
@@ -31,7 +32,7 @@ impl Cart {
         }
 
         // Check if user has a cart
-        let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE user_id = ?"#, user_id)
+        let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE userId = ?"#, user_id)
             .fetch_optional(&db.pool)
             .await?;
 
@@ -40,12 +41,9 @@ impl Cart {
         }
 
         // Create a new cart
-        let result = sqlx::query!(
-            r#"INSERT INTO user_cart (user_id) VALUES (?)"#,
-            user_id
-        )
-        .execute(&db.pool)
-        .await?;
+        let result = sqlx::query!(r#"INSERT INTO user_cart (userId) VALUES (?)"#, user_id)
+            .execute(&db.pool)
+            .await?;
 
         let id = result.last_insert_id() as i32;
         Ok(Self {
@@ -56,54 +54,10 @@ impl Cart {
     }
 
     pub async fn remove_cart(db: &mut Database, user_id: i32) -> Result<(), Box<dyn Error>> {
-        sqlx::query!(r#"DELETE FROM user_cart WHERE user_id = ?"#, user_id)
+        sqlx::query!(r#"DELETE FROM user_cart WHERE userId = ?"#, user_id)
             .execute(&db.pool)
             .await?;
         Ok(())
-    }
-
-    pub async fn get_user_cart(db: &mut Database, user_id: i32) -> Result<Cart, Box<dyn Error>> {
-        let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE user_id = ?"#, user_id)
-            .fetch_optional(&db.pool)
-            .await?;
-
-        match cart {
-            Some(cart) => {
-                let books_with_quantity = sqlx::query!(
-                    r#"
-                    SELECT book.*, cart_items.quantity
-                    FROM books book
-                    JOIN cart_items ON book.id = cart_items.book_id
-                    JOIN user_cart ON cart_items.cart_id = user_cart.id
-                    WHERE user_cart.user_id = ?
-                    "#,
-                    user_id
-                )
-                .fetch_all(&db.pool)
-                .await?;
-
-                let books = books_with_quantity
-                    .into_iter()
-                    .map(|row| CartBook {
-                        id: Some(row.id),
-                        title: row.title,
-                        author: row.author,
-                        price: row.price,
-                        description: row.description,
-                        published_date: row.published_date,
-                        isbn: row.isbn,
-                        quantity: row.quantity,
-                    })
-                    .collect();
-
-                Ok(Cart {
-                    id: Some(cart.id),
-                    user_id: cart.user_id,
-                    books,
-                })
-            }
-            None => Err("User doesn't have a cart".into()),
-        }
     }
 
     pub(crate) async fn add_book_to_cart(
@@ -111,7 +65,7 @@ impl Cart {
         user_id: i32,
         book_id: i32,
     ) -> Result<(), Box<dyn Error>> {
-        let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE user_id = ?"#, user_id)
+        let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE userId = ?"#, user_id)
             .fetch_optional(&db.pool)
             .await?;
         if cart.is_none() {
@@ -129,7 +83,7 @@ impl Cart {
 
         // Check if the book is already in the cart
         let existing_item = sqlx::query!(
-            r#"SELECT * FROM cart_items WHERE cart_id = ? AND book_id = ?"#,
+            r#"SELECT * FROM cart_items WHERE cartId = ? AND bookId = ?"#,
             cart_id,
             book_id
         )
@@ -147,7 +101,7 @@ impl Cart {
         } else {
             // If the book is not in the cart, insert a new item
             sqlx::query!(
-                r#"INSERT INTO cart_items (cart_id, book_id, quantity) VALUES (?, ?, 1)"#,
+                r#"INSERT INTO cart_items (cartId, bookId, quantity) VALUES (?, ?, 1)"#,
                 cart_id,
                 book_id
             )
@@ -163,14 +117,14 @@ impl Cart {
         user_id: i32,
         book_id: i32,
     ) -> Result<(), Box<dyn Error>> {
-        let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE user_id = ?"#, user_id)
+        let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE userId = ?"#, user_id)
             .fetch_optional(&db.pool)
             .await?;
 
         if let Some(cart) = cart {
             // Get the current quantity of the book in the cart
             let cart_item = sqlx::query!(
-                r#"SELECT quantity FROM cart_items WHERE cart_id = ? AND book_id = ?"#,
+                r#"SELECT quantity FROM cart_items WHERE cartId = ? AND bookId = ?"#,
                 cart.id,
                 book_id
             )
@@ -181,7 +135,7 @@ impl Cart {
                 if item.quantity > 1 {
                     // Decrease the quantity by 1
                     sqlx::query!(
-                        r#"UPDATE cart_items SET quantity = quantity - 1 WHERE cart_id = ? AND book_id = ?"#,
+                        r#"UPDATE cart_items SET quantity = quantity - 1 WHERE cartId = ? AND bookId = ?"#,
                         cart.id,
                         book_id
                     )
@@ -190,7 +144,7 @@ impl Cart {
                 } else {
                     // Remove the item if quantity is 1
                     sqlx::query!(
-                        r#"DELETE FROM cart_items WHERE cart_id = ? AND book_id = ?"#,
+                        r#"DELETE FROM cart_items WHERE cartId = ? AND bookId = ?"#,
                         cart.id,
                         book_id
                     )

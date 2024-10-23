@@ -1,20 +1,41 @@
+use super::cart::Cart;
+use super::cart::CartBook;
 use crate::database::Database;
 use crate::utils::email;
 use crate::utils::password;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+use sqlx::prelude::FromRow;
 use std::error::Error;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub enum UserGroup {
+    User,
+    Admin,
+}
+
+// this is what bothers me
+impl From<String> for UserGroup {
+    fn from(s: String) -> Self {
+        match s.as_str() {
+            "Admin" => UserGroup::Admin,
+            "User" => UserGroup::User,
+            _ => UserGroup::User,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, FromRow)]
 pub struct User {
     pub id: Option<i32>,
     pub email: Option<String>,
     pub username: Option<String>,
     pub password: Option<String>,
-    pub group: Option<String>,
+    pub group: UserGroup,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, FromRow)]
+#[sqlx(rename_all = "camelCase")]
 pub struct UserBooks {
     pub id: Option<i32>,
     pub user_id: i32,
@@ -49,9 +70,9 @@ impl User {
         // If user doesn't exist, create a new one
         let hashed_password = password::hash_password(&user.password.unwrap());
         let result = sqlx::query!(
-            "INSERT INTO users(email, username, password) VALUES(?, ?, ?)",
-            user.email,
+            r#"INSERT INTO users(username, email, password) VALUES(?, ?, ?)"#,
             user.username,
+            user.email,
             hashed_password
         )
         .execute(&db.pool)
@@ -63,7 +84,7 @@ impl User {
             email: user.email,
             username: user.username,
             password: Some(hashed_password),
-            group: None,
+            group: UserGroup::User,
         })
     }
 
@@ -73,7 +94,7 @@ impl User {
     ) -> Result<Self, Box<dyn Error>> {
         let user_data = sqlx::query_as!(
             Self,
-            "SELECT * FROM users WHERE username = ?",
+            r#"SELECT * FROM users WHERE username = ?"#,
             user.username
         )
         .fetch_optional(&db.pool)
@@ -85,7 +106,13 @@ impl User {
                     &user.password.unwrap(),
                     hashed_user.password.as_ref().unwrap(),
                 ) {
-                    Ok(hashed_user)
+                    Ok(Self {
+                        id: hashed_user.id,
+                        username: hashed_user.username,
+                        email: hashed_user.email,
+                        password: hashed_user.password,
+                        group: hashed_user.group.into(),
+                    })
                 } else {
                     Err("Invalid password".into())
                 }
@@ -94,19 +121,63 @@ impl User {
         }
     }
 
-    pub async fn find_user_books(
+    pub async fn get_books(
         db: &mut Database,
         user_id: i32,
     ) -> Result<Vec<UserBooks>, Box<dyn Error>> {
         let user_books = sqlx::query_as!(
             UserBooks,
-            "SELECT * FROM user_books WHERE user_id = ?",
+            r#"SELECT id, userId as user_id, bookId as book_id, status FROM user_books WHERE userId = ?"#,
             user_id
         )
         .fetch_all(&db.pool)
         .await?;
 
         Ok(user_books)
+    }
+
+    pub async fn get_cart(db: &mut Database, user_id: i32) -> Result<Cart, Box<dyn Error>> {
+        let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE userId = ?"#, user_id)
+            .fetch_optional(&db.pool)
+            .await?;
+
+        match cart {
+            Some(cart) => {
+                let books_with_quantity = sqlx::query!(
+                    r#"
+                    SELECT book.*, cart_items.quantity
+                    FROM books book
+                    JOIN cart_items ON book.id = cart_items.bookId
+                    JOIN user_cart ON cart_items.cartId = user_cart.id
+                    WHERE user_cart.userId = ?
+                    "#,
+                    user_id
+                )
+                .fetch_all(&db.pool)
+                .await?;
+
+                let books = books_with_quantity
+                    .into_iter()
+                    .map(|row| CartBook {
+                        id: Some(row.id),
+                        title: row.title,
+                        author: row.author,
+                        price: row.price,
+                        description: row.description,
+                        published_date: row.publishedDate,
+                        isbn: row.isbn,
+                        quantity: row.quantity,
+                    })
+                    .collect();
+
+                Ok(Cart {
+                    id: Some(cart.id),
+                    user_id: cart.userId,
+                    books,
+                })
+            }
+            None => Err("User doesn't have a cart".into()),
+        }
     }
 
     pub(crate) async fn forgot_password(
@@ -141,7 +212,7 @@ impl User {
     ) -> Result<(), Box<dyn Error>> {
         // Verify the reset token
         let user = sqlx::query!(
-            "SELECT * FROM reset_tokens WHERE token = ? AND token_expires > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
+            "SELECT * FROM reset_tokens WHERE token = ? AND tokenExpires > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
             token
         )
         .fetch_optional(&db.pool)
@@ -154,12 +225,12 @@ impl User {
                 let _ = sqlx::query!(
                     "UPDATE users SET password = ? WHERE id = ?",
                     hashed_password,
-                    &user.user_id
+                    &user.userId
                 )
                 .execute(&db.pool)
                 .await;
 
-                let _ = sqlx::query!("DELETE FROM reset_tokens WHERE user_id = ?", user.user_id)
+                let _ = sqlx::query!("DELETE FROM reset_tokens WHERE userId = ?", user.userId)
                     .execute(&db.pool)
                     .await;
 

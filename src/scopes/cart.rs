@@ -13,7 +13,6 @@ pub fn cart_scope() -> Scope {
     web::scope("/cart")
         .route("/{user_id}", web::post().to(create_cart))
         .route("/{user_id}", web::delete().to(delete_cart))
-        .route("/{user_id}", web::get().to(get_cart))
         .route("/book", web::post().to(add_book_to_cart))
         .route("/book", web::delete().to(delete_book_from_cart))
     // .route("/{id}", web::put().to(update_book))
@@ -29,17 +28,6 @@ async fn create_cart(user_id: web::Path<i32>) -> impl Responder {
     match Cart::new(&mut db, user_id.into_inner()).await {
         Ok(_) => HttpResponse::Ok().json("Cart created"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error creating cart: {:?}", e)),
-    }
-}
-
-async fn get_cart(user_id: web::Path<i32>) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match Cart::get_user_cart(&mut db, user_id.into_inner()).await {
-        Ok(cart) => HttpResponse::Ok().json(cart),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
     }
 }
 

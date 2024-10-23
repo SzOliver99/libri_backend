@@ -1,1 +1,1 @@
-CREATE DATABASE IF NOT EXISTS `libri_backend`;
+CREATE DATABASE IF NOT EXISTS `bookstore_db`;

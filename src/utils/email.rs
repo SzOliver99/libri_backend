@@ -11,7 +11,7 @@ pub async fn send_password_reset_email(to: &str, reset_token: &str) -> Result<()
         .to(to.parse().unwrap())
         .subject("Password Reset")
         .header(ContentType::TEXT_PLAIN)
-        .body(format!("Your password reset token is: {}\nThe link to the reset page: http://localhost:5173/libri_project/reset-password?token={}.", reset_token, reset_token))
+        .body(format!("Your password reset token is: {}\nThe link to the reset page: https://libri-project.vercel.app/reset-password?token={}.", reset_token, reset_token))
         .unwrap();
 
     let smtp_username = dotenv::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
@@ -60,13 +60,15 @@ pub async fn store_reset_token(
     reset_token: &str,
 ) -> Result<(), Box<dyn Error>> {
     // Delete expired tokens
-    sqlx::query!("DELETE FROM reset_tokens WHERE token_expires < DATE_SUB(NOW(), INTERVAL 1 HOUR)")
-        .execute(&db.pool)
-        .await?;
+    sqlx::query!(
+        r#"DELETE FROM reset_tokens WHERE tokenExpires < DATE_SUB(NOW(), INTERVAL 1 HOUR)"#
+    )
+    .execute(&db.pool)
+    .await?;
 
     // Insert new token
     sqlx::query!(
-        "INSERT INTO reset_tokens (user_id, token, token_expires) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
+        r#"INSERT INTO reset_tokens (userId, token, tokenExpires) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))"#,
         user_id,
         reset_token
     )

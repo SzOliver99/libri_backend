@@ -15,8 +15,8 @@ pub fn user_scope() -> Scope {
         .route("/sign-up", web::post().to(sign_up))
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_password))
-        .route("/{user_id}/buy-book/{book_id}", web::patch().to(buy_book))
         .route("/{user_id}/books", web::get().to(get_user_books))
+        .route("/{user_id}", web::get().to(get_user_cart))
 }
 
 #[derive(Deserialize)]
@@ -72,28 +72,27 @@ async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
     }
 }
 
-async fn buy_book(path: web::Path<(i32, i32)>) -> impl Responder {
-    let (user_id, book_id) = path.into_inner();
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match Book::buy_book(&mut db, user_id, book_id).await {
-        Ok(_) => HttpResponse::Ok().json("Book bought"),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error buying book: {:?}", e)),
-    }
-}
-
 async fn get_user_books(user_id: web::Path<i32>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    match User::find_user_books(&mut db, user_id.into_inner()).await {
+    match User::get_books(&mut db, user_id.into_inner()).await {
         Ok(user_books) => HttpResponse::Ok().json(user_books),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error fetching user books: {:?}", e))
         }
+    }
+}
+
+async fn get_user_cart(user_id: web::Path<i32>) -> impl Responder {
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match User::get_cart(&mut db, user_id.into_inner()).await {
+        Ok(cart) => HttpResponse::Ok().json(cart),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
     }
 }
 

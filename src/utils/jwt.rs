@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::extractors::authentication_token::Claims;
 
 pub async fn encode_token(id: usize, secret: web::Data<String>) -> String {
-    let exp: usize = (chrono::Utc::now() + chrono::Duration::days(365)).timestamp() as usize;
+    let exp: usize = (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize;
     let claims: Claims = Claims { id, exp };
     let token = encode(
         &Header::default(),
