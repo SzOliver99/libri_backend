@@ -1,7 +1,10 @@
 use crate::{
     database::Database,
     extractors::authentication_token::AuthenticationToken,
-    models::{book::Book, user::User},
+    models::{
+        book::Book,
+        user::{User, UserGroup},
+    },
     utils::jwt::encode_token,
 };
 use actix_web::{web, HttpResponse, Responder, Scope};
@@ -42,7 +45,7 @@ async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl R
         email: None,
         username: data.username.clone(),
         password: data.password.clone(),
-        group: None,
+        group: UserGroup::User,
     };
 
     match User::login_with_password(&mut db, user).await {
@@ -64,7 +67,7 @@ async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
         email: data.email.clone(),
         username: data.username.clone(),
         password: data.password.clone(),
-        group: None,
+        group: UserGroup::User,
     };
     match User::new(&mut db, user).await {
         Ok(_) => HttpResponse::Ok().json("Signup successful"),
@@ -106,7 +109,7 @@ async fn forgot_password(web::Form(form): web::Form<UserInfo>) -> impl Responder
         email: form.email,
         username: None,
         password: None,
-        group: None,
+        group: UserGroup::User,
     };
     match User::forgot_password(&mut db, user).await {
         Ok(_) => HttpResponse::Ok().json("Forgot password successful"),

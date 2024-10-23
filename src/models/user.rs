@@ -34,7 +34,7 @@ pub struct User {
     pub group: UserGroup,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, Serialize, FromRow)]
 #[sqlx(rename_all = "camelCase")]
 pub struct UserBooks {
     pub id: Option<i32>,
