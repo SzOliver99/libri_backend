@@ -62,50 +62,30 @@ impl Cart {
     ) -> Result<(), Box<dyn Error>> {
         // Check if user has a cart
         let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE userId = ?"#, user_id)
-            .fetch_optional(&db.pool)
+            .fetch_one(&db.pool)
             .await?;
-        if cart.is_none() {
-            // Create a new cart if user doesn't have one
-            Self::create(db, user_id).await?;
-        }
 
         // Check if book exists
-        let book = sqlx::query!(r#"SELECT * FROM books WHERE id = ?"#, book_id)
+        if sqlx::query!(r#"SELECT * FROM books WHERE id = ?"#, book_id)
             .fetch_optional(&db.pool)
-            .await?;
-
-        if book.is_none() {
+            .await?
+            .is_none()
+        {
             return Err("Book doesn't exist".into());
         }
 
-        // Check if the book is already in the cart
-        let cart_id = cart.unwrap().id;
-        let existing_item = sqlx::query!(
-            r#"SELECT * FROM cart_items WHERE cartId = ? AND bookId = ?"#,
-            cart_id,
+        // Upsert the cart item
+        sqlx::query!(
+            r#"
+            INSERT INTO cart_items (cartId, bookId, quantity)
+            VALUES (?, ?, 1)
+            ON DUPLICATE KEY UPDATE quantity = quantity + 1
+            "#,
+            cart.id,
             book_id
         )
-        .fetch_optional(&db.pool)
+        .execute(&db.pool)
         .await?;
-
-        if let Some(item) = existing_item {
-            // If the book is already in the cart, increase the quantity
-            sqlx::query!(
-                r#"UPDATE cart_items SET quantity = quantity + 1 WHERE id = ?"#,
-                item.id
-            )
-            .execute(&db.pool)
-            .await?;
-        } else {
-            // If the book is not in the cart, insert a new item
-            sqlx::query!(
-                r#"INSERT INTO cart_items (cartId, bookId, quantity) VALUES (?, ?, 1)"#,
-                cart_id,
-                book_id
-            )
-            .execute(&db.pool)
-            .await?;
-        }
 
         Ok(())
     }
