@@ -9,11 +9,7 @@ primary_region = 'otp'
 [build]
 
 [env]
-  DATABASE_URL = 'mysql://avnadmin:AVNS_BWed8iDIL8ezZ7iqdWb@bookstore-database-bookstore-backend.h.aivencloud.com:20992/defaultdb?ssl-mode=REQUIRED'
   PORT = '8080'
-  SECRET_KEY = 'secret'
-  SMTP_PASSWORD = 'aptr mxzc gnnn ovim'
-  SMTP_USERNAME = 'bookstore.project01@gmail.com'
 
 [http_service]
   internal_port = 8080
