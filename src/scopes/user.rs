@@ -11,12 +11,12 @@ use std::env;
 pub fn user_scope() -> Scope {
     web::scope("/user")
         .route("/sign-in", web::post().to(sign_in))
-        .route("/protected", web::get().to(protected_route))
+        // .route("/protected", web::get().to(protected_route))
         .route("/sign-up", web::post().to(sign_up))
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_password))
-        .route("/{user_id}/books", web::get().to(get_user_books))
-        .route("/{user_id}/cart", web::get().to(get_user_cart))
+        .route("/books", web::get().to(get_user_books))
+        .route("/cart", web::get().to(get_user_cart))
 }
 
 #[derive(Deserialize)]
@@ -54,14 +54,14 @@ async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl R
     }
 }
 
-#[derive(Serialize)]
-struct ProtectedResponse {
-    id: usize,
-}
+// #[derive(Serialize)]
+// struct ProtectedResponse {
+//     id: usize,
+// }
 
-async fn protected_route(auth_token: AuthenticationToken) -> impl Responder {
-    HttpResponse::Ok().json(ProtectedResponse { id: auth_token.id })
-}
+// async fn protected_route(auth_token: AuthenticationToken) -> impl Responder {
+//     HttpResponse::Ok().json(ProtectedResponse { id: auth_token.id })
+// }
 
 async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
@@ -81,12 +81,12 @@ async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
     }
 }
 
-async fn get_user_books(user_id: web::Path<i32>) -> impl Responder {
+async fn get_user_books(auth_token: AuthenticationToken) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    match User::get_books(&mut db, user_id.into_inner()).await {
+    match User::get_books(&mut db, auth_token.id as i32).await {
         Ok(user_books) => HttpResponse::Ok().json(user_books),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error fetching user books: {:?}", e))
@@ -94,25 +94,25 @@ async fn get_user_books(user_id: web::Path<i32>) -> impl Responder {
     }
 }
 
-async fn get_user_cart(user_id: web::Path<i32>) -> impl Responder {
+async fn get_user_cart(auth_token: AuthenticationToken) -> impl Responder {
     let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    match User::get_cart(&mut db, user_id.into_inner()).await {
+    match User::get_cart(&mut db, auth_token.id as i32).await {
         Ok(cart) => HttpResponse::Ok().json(cart),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
     }
 }
 
-async fn forgot_password(web::Form(form): web::Form<UserInfo>) -> impl Responder {
+async fn forgot_password(data: web::Json<UserInfo>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
     let user = User {
         id: None,
-        email: form.email,
+        email: data.email.clone(),
         username: None,
         password: None,
         group: UserGroup::User,
@@ -133,27 +133,20 @@ struct ResetPasswordQuery {
 #[derive(Deserialize)]
 struct ResetPassword {
     password: String,
-    repeat_password: String,
 }
 
 async fn reset_password(
     query: web::Query<ResetPasswordQuery>,
-    form: web::Form<ResetPassword>,
+    data: web::Json<ResetPassword>,
 ) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    if form.password == form.repeat_password {
-        match User::reset_password(&mut db, query.token.to_string(), form.password.to_string())
-            .await
-        {
-            Ok(_) => HttpResponse::Ok().json("Reset password successful"),
-            Err(e) => {
-                HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))
-            }
+    match User::reset_password(&mut db, query.token.to_string(), data.password.to_string()).await {
+        Ok(_) => HttpResponse::Ok().json("Reset password successful"),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))
         }
-    } else {
-        HttpResponse::BadRequest().json("Passwords do not match")
     }
 }
