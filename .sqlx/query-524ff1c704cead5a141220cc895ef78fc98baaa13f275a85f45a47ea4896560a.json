@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n                UPDATE cart_items\n                SET quantity = CASE\n                    WHEN quantity >= 1 THEN quantity - 1\n                    ELSE quantity\n                END\n                WHERE cartId = ? AND bookId = ?\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "524ff1c704cead5a141220cc895ef78fc98baaa13f275a85f45a47ea4896560a"
+}
