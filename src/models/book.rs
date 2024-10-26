@@ -17,11 +17,11 @@ pub struct Book {
     pub isbn: String,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum BookStatus {
-    Purchased,
-    Borrowed,
-}
+// #[derive(Debug, PartialEq, Eq)]
+// pub enum BookStatus {
+//     Purchased,
+//     Borrowed,
+// }
 
 impl Book {
     pub async fn create(db: &mut Database, book: Book) -> Result<(), Box<dyn Error>> {

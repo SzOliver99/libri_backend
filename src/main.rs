@@ -16,6 +16,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     dotenv::dotenv().ok();
 
     // Run the server
-    Server::run(8080)?;
+    Server::run(std::env::var("PORT").unwrap().parse().unwrap())?;
     Ok(())
 }

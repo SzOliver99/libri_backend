@@ -29,6 +29,7 @@ struct UserInfo {
 #[derive(Serialize)]
 struct LoginResponse {
     token: String,
+    group: UserGroup,
 }
 
 async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl Responder {
@@ -47,6 +48,7 @@ async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl R
     match User::login_with_password(&mut db, user).await {
         Ok(logged_in_user) => HttpResponse::Ok().json(LoginResponse {
             token: encode_token(logged_in_user.id.unwrap() as usize, secret).await,
+            group: logged_in_user.group,
         }),
         Err(e) => HttpResponse::Unauthorized().json(format!("Signin failed: {}", e)),
     }

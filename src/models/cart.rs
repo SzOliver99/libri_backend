@@ -103,7 +103,7 @@ impl Cart {
                 r#"
                 UPDATE cart_items
                 SET quantity = CASE
-                    WHEN quantity > 1 THEN quantity - 1
+                    WHEN quantity >= 1 THEN quantity - 1
                     ELSE quantity
                 END
                 WHERE cartId = ? AND bookId = ?
@@ -118,7 +118,7 @@ impl Cart {
             sqlx::query!(
                 r#"
                 DELETE FROM cart_items
-                WHERE cartId = ? AND bookId = ? AND quantity = 1
+                WHERE cartId = ? AND bookId = ? AND quantity = 0
                 "#,
                 cart.id,
                 book_id
