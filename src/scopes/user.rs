@@ -11,7 +11,7 @@ use std::env;
 pub fn user_scope() -> Scope {
     web::scope("/user")
         .route("/sign-in", web::post().to(sign_in))
-        // .route("/protected", web::get().to(protected_route))
+        .route("/protected", web::get().to(protected_route))
         .route("/sign-up", web::post().to(sign_up))
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_password))
@@ -54,14 +54,14 @@ async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl R
     }
 }
 
-// #[derive(Serialize)]
-// struct ProtectedResponse {
-//     id: usize,
-// }
+#[derive(Serialize)]
+struct ProtectedResponse {
+    message: String
+}
 
-// async fn protected_route(auth_token: AuthenticationToken) -> impl Responder {
-//     HttpResponse::Ok().json(ProtectedResponse { id: auth_token.id })
-// }
+async fn protected_route(_auth_token: AuthenticationToken) -> impl Responder {
+    HttpResponse::Ok().json(ProtectedResponse { message: "Auth success".to_string() })
+}
 
 async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
