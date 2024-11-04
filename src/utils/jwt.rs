@@ -19,12 +19,12 @@ pub async fn encode_token(id: usize, secret: web::Data<String>) -> String {
     token
 }
 
-#[derive(Serialize, Deserialize)]
-struct DecodeBody {
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DecodeBody {
     token: String,
 }
 
-async fn _decode_token(
+pub async fn _decode_id_from_token(
     body: web::Json<DecodeBody>,
     secret: web::Data<String>,
 ) -> Result<usize, JwtError> {

@@ -9,11 +9,7 @@ primary_region = 'otp'
 [build]
 
 [env]
-  DATABASE_URL = 'mysql://root:bookstore123@bookstore-database.fly.dev:3306/bookstore_db'
   PORT = '8080'
-  SECRET_KEY = 'secret'
-  SMTP_PASSWORD = 'aptr mxzc gnnn ovim'
-  SMTP_USERNAME = 'bookstore.project01@gmail.com'
 
 [http_service]
   internal_port = 8080

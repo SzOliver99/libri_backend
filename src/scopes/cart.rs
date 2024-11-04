@@ -1,11 +1,12 @@
-use crate::{database::Database, models::cart::Cart};
+use crate::{
+    database::Database, extractors::authentication_token::AuthenticationToken, models::cart::Cart,
+};
 use actix_web::{web, HttpResponse, Responder, Scope};
 use serde::Deserialize;
 use std::env;
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct BookCartRequest {
-    user_id: i32,
     book_id: i32,
 }
 
@@ -16,23 +17,26 @@ pub fn cart_scope() -> Scope {
         .route("/book/", web::delete().to(decrease_book_quantity))
 }
 
-async fn delete_user_cart(user_id: web::Path<i32>) -> impl Responder {
+async fn delete_user_cart(auth_token: AuthenticationToken) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    match Cart::delete_cart(&mut db, user_id.into_inner()).await {
+    match Cart::delete_cart(&mut db, auth_token.id as i32).await {
         Ok(_) => HttpResponse::Ok().json("Cart deleted"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error deleting cart: {:?}", e)),
     }
 }
 
-async fn increment_book_quantity(data: web::Json<BookCartRequest>) -> impl Responder {
+async fn increment_book_quantity(
+    auth_token: AuthenticationToken,
+    data: web::Json<BookCartRequest>,
+) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    match Cart::increment_book_quantity(&mut db, data.user_id, data.book_id).await {
+    match Cart::increment_book_quantity(&mut db, auth_token.id as i32, data.book_id).await {
         Ok(_) => HttpResponse::Ok().json("Book added to cart"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error adding book to cart: {:?}", e))
@@ -40,12 +44,15 @@ async fn increment_book_quantity(data: web::Json<BookCartRequest>) -> impl Respo
     }
 }
 
-async fn decrease_book_quantity(data: web::Json<BookCartRequest>) -> impl Responder {
+async fn decrease_book_quantity(
+    auth_token: AuthenticationToken,
+    data: web::Json<BookCartRequest>,
+) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    match Cart::decrease_book_quantity(&mut db, data.user_id, data.book_id).await {
+    match Cart::decrease_book_quantity(&mut db, auth_token.id as i32, data.book_id).await {
         Ok(_) => HttpResponse::Ok().json("Book deleted from cart"),
         Err(e) => HttpResponse::InternalServerError()
             .json(format!("Error deleting book from cart: {:?}", e)),

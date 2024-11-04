@@ -14,8 +14,8 @@ pub async fn send_password_reset_email(to: &str, reset_token: &str) -> Result<()
         .body(format!("Your password reset token is: {}\nThe link to the reset page: https://libri-project.vercel.app/reset-password?token={}.", reset_token, reset_token))
         .unwrap();
 
-    let smtp_username = dotenv::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
-    let smtp_password = dotenv::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
+    let smtp_username = std::env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
+    let smtp_password = std::env::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
     let creds = Credentials::new(smtp_username, smtp_password);
 
     // Open a remote connection to gmail
