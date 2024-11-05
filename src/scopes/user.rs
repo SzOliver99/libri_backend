@@ -13,8 +13,10 @@ pub fn user_scope() -> Scope {
         .route("/sign-in", web::post().to(sign_in))
         .route("/protected", web::get().to(protected_route))
         .route("/sign-up", web::post().to(sign_up))
+        .route("/info", web::get().to(get_user_info))
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_password))
+        .route("/change-password", web::post().to(change_password))
         .route("/books", web::get().to(get_user_books))
         .route("/cart", web::get().to(get_user_cart))
 }
@@ -105,6 +107,10 @@ async fn get_user_cart(auth_token: AuthenticationToken) -> impl Responder {
     }
 }
 
+async fn get_user_info() -> impl Responder {
+    HttpResponse::InternalServerError().json("anyad")
+}
+
 async fn forgot_password(data: web::Json<UserInfo>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
@@ -149,4 +155,8 @@ async fn reset_password(
             HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))
         }
     }
+}
+
+async fn change_password() -> impl Responder {
+    HttpResponse::InternalServerError().json("ANYAD")
 }
