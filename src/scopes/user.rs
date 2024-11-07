@@ -14,8 +14,8 @@ pub fn user_scope() -> Scope {
         .route("/protected", web::get().to(protected_route))
         .route("/sign-up", web::post().to(sign_up))
         .route("/info", web::get().to(get_user_info))
-        .route("/forgot-password", web::post().to(forgot_password))
-        .route("/reset-password", web::post().to(reset_password))
+        // .route("/forgot-password", web::post().to(forgot_password))
+        // .route("/reset-password", web::post().to(reset_password))
         .route("/change-password", web::post().to(change_password))
         .route("/books", web::get().to(get_user_books))
         .route("/cart", web::get().to(get_user_cart))
@@ -111,25 +111,25 @@ async fn get_user_info() -> impl Responder {
     HttpResponse::InternalServerError().json("anyad")
 }
 
-async fn forgot_password(data: web::Json<UserInfo>) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
+// async fn forgot_password(data: web::Json<UserInfo>) -> impl Responder {
+//     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+//         .await
+//         .unwrap();
 
-    let user = User {
-        id: None,
-        email: data.email.clone(),
-        username: None,
-        password: None,
-        group: UserGroup::User,
-    };
-    match User::forgot_password(&mut db, user).await {
-        Ok(_) => HttpResponse::Ok().json("Forgot password successful"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Forgot password failed: {:?}", e))
-        }
-    }
-}
+//     let user = User {
+//         id: None,
+//         email: data.email.clone(),
+//         username: None,
+//         password: None,
+//         group: UserGroup::User,
+//     };
+//     match User::forgot_password(&mut db, user).await {
+//         Ok(_) => HttpResponse::Ok().json("Forgot password successful"),
+//         Err(e) => {
+//             HttpResponse::InternalServerError().json(format!("Forgot password failed: {:?}", e))
+//         }
+//     }
+// }
 
 #[derive(Deserialize)]
 struct ResetPasswordQuery {
@@ -141,21 +141,21 @@ struct ResetPassword {
     password: String,
 }
 
-async fn reset_password(
-    query: web::Query<ResetPasswordQuery>,
-    data: web::Json<ResetPassword>,
-) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
+// async fn reset_password(
+//     query: web::Query<ResetPasswordQuery>,
+//     data: web::Json<ResetPassword>,
+// ) -> impl Responder {
+//     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+//         .await
+//         .unwrap();
 
-    match User::reset_password(&mut db, query.token.to_string(), data.password.to_string()).await {
-        Ok(_) => HttpResponse::Ok().json("Reset password successful"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))
-        }
-    }
-}
+//     match User::reset_password(&mut db, query.token.to_string(), data.password.to_string()).await {
+//         Ok(_) => HttpResponse::Ok().json("Reset password successful"),
+//         Err(e) => {
+//             HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))
+//         }
+//     }
+// }
 
 async fn change_password() -> impl Responder {
     HttpResponse::InternalServerError().json("ANYAD")

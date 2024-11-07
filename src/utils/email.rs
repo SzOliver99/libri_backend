@@ -27,7 +27,7 @@ pub async fn send_password_reset_email(to: &str, reset_token: &str) -> Result<()
     // Send the email
     match mailer.send(&email) {
         // If email was sent successfully, print confirmation message
-        Ok(_) => println!("Email sent successfully!"),
+        Ok(_) => println!("Email sent successfully!"),  
         // If there was an error sending the email, print the error
         Err(e) => eprintln!("Could not send email: {:?}", e),
     }

@@ -21,7 +21,7 @@ pub async fn encode_token(id: usize, secret: web::Data<String>) -> String {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct DecodeBody {
-    token: String,
+    pub token: String,
 }
 
 pub async fn _decode_id_from_token(
