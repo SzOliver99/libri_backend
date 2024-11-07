@@ -36,6 +36,17 @@ pub struct User {
 }
 
 #[derive(Debug, Serialize, FromRow)]
+pub struct UserInfo {
+    pub first_name: String,
+    pub last_name: String,
+    pub phone_number: String,
+    pub billing_address: String,
+    pub city: String,
+    pub state_province: String,
+    pub postal_code: String,
+}
+
+#[derive(Debug, Serialize, FromRow)]
 #[sqlx(rename_all = "camelCase")]
 pub struct UserBooks {
     pub id: Option<i32>,
@@ -89,6 +100,25 @@ impl User {
         })
     }
 
+    pub async fn get_info(db: &mut Database, user_id: i32) -> Result<UserInfo, Box<dyn Error>> {
+        let user_info = sqlx::query_as!(
+            UserInfo,
+            r#"
+            SELECT first_name, last_name, phone_number, billing_address, city, state_province, postal_code
+            FROM user_info
+            WHERE user_id = ?
+            "#,
+            user_id
+        )
+        .fetch_optional(&db.pool)
+        .await?;
+
+        match user_info {
+            Some(info) => Ok(info),
+            None => Err("User info not found".into()),
+        }
+    }
+
     pub async fn login_with_password(
         db: &mut Database,
         user: User,
@@ -122,20 +152,20 @@ impl User {
         }
     }
 
-    pub async fn get_books(
-        db: &mut Database,
-        user_id: i32,
-    ) -> Result<Vec<UserBooks>, Box<dyn Error>> {
-        let user_books = sqlx::query_as!(
-            UserBooks,
-            r#"SELECT id, userId as user_id, bookId as book_id, status FROM user_books WHERE userId = ?"#,
-            user_id
-        )
-        .fetch_all(&db.pool)
-        .await?;
+    // pub async fn get_books(
+    //     db: &mut Database,
+    //     user_id: i32,
+    // ) -> Result<Vec<UserBooks>, Box<dyn Error>> {
+    //     let user_books = sqlx::query_as!(
+    //         UserBooks,
+    //         r#"SELECT id, userId as user_id, bookId as book_id, status FROM user_books WHERE userId = ?"#,
+    //         user_id
+    //     )
+    //     .fetch_all(&db.pool)
+    //     .await?;
 
-        Ok(user_books)
-    }
+    //     Ok(user_books)
+    // }
 
     pub async fn get_cart(db: &mut Database, user_id: i32) -> Result<Cart, Box<dyn Error>> {
         let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE userId = ?"#, user_id)

@@ -18,7 +18,7 @@ pub fn user_scope() -> Scope {
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_password))
         .route("/change-password", web::post().to(change_password))
-        .route("/books", web::get().to(get_user_books))
+        // .route("/books", web::get().to(get_user_books))
         .route("/cart", web::get().to(get_user_cart))
 }
 
@@ -90,18 +90,18 @@ async fn protected_route(_auth_token: AuthenticationToken) -> impl Responder {
     })
 }
 
-async fn get_user_books(auth_token: AuthenticationToken) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
+// async fn get_user_books(auth_token: AuthenticationToken) -> impl Responder {
+//     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+//         .await
+//         .unwrap();
 
-    match User::get_books(&mut db, auth_token.id as i32).await {
-        Ok(user_books) => HttpResponse::Ok().json(user_books),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Error fetching user books: {:?}", e))
-        }
-    }
-}
+//     match User::get_books(&mut db, auth_token.id as i32).await {
+//         Ok(user_books) => HttpResponse::Ok().json(user_books),
+//         Err(e) => {
+//             HttpResponse::InternalServerError().json(format!("Error fetching user books: {:?}", e))
+//         }
+//     }
+// }
 
 async fn get_user_cart(auth_token: AuthenticationToken) -> impl Responder {
     let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
@@ -114,8 +114,15 @@ async fn get_user_cart(auth_token: AuthenticationToken) -> impl Responder {
     }
 }
 
-async fn get_user_info() -> impl Responder {
-    HttpResponse::InternalServerError().json("anyad")
+async fn get_user_info(auth_token: AuthenticationToken) -> impl Responder {
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match User::get_info(&mut db, auth_token.id as i32).await {
+        Ok(user_info) => HttpResponse::Ok().json(user_info),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
+    }
 }
 
 async fn forgot_password(data: web::Json<UserInfoJson>) -> impl Responder {

@@ -61,5 +61,4 @@ INSERT INTO `books` (`id`, `title`, `author`, `price`, `description`, `published
 (49, 'A kis herceg', 'Antoine de Saint-Exupéry', 600, 'A híres novella magyar fordítása egy kis hercegről.', '1943-01-01', '9789631187221'),
 (50, 'Tükrök', 'Pilinszky János', 700, 'Elmélkedő, filozófiai versek gyűjteménye.', '1956-01-01', '9789631187894'),
 (51, 'A fájdalom kapuja', 'Németh László', 1100, 'Egy regény a gyászról és a gyógyulásról.', '1953-01-01', '9789631187719'),
-(52, 'Száz év magány', 'Gabriel García Márquez', 1900, 'Az \"Egy száz év magány\" magyar fordítása.', '1967-01-01', '9789631187465'),
-(53, 'A napok hordaléka', 'Békés Pál', 1700, 'Modernista regény az élet mulandó pillanatairól.', '1980-01-01', '9789631187619');
+(52, 'Száz év magány', 'Gabriel García Márquez', 1900, 'Az \"Egy száz év magány\" magyar fordítása.', '1967-01-01', '9789631187465');
