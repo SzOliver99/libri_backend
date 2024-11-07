@@ -23,7 +23,7 @@ pub fn user_scope() -> Scope {
 }
 
 #[derive(Deserialize)]
-struct UserInfo {
+struct UserInfoJson {
     email: Option<String>,
     username: Option<String>,
     password: Option<String>,
@@ -35,7 +35,7 @@ struct LoginResponse {
     group: UserGroup,
 }
 
-async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<WebData>) -> impl Responder {
+async fn sign_in(data: web::Json<UserInfoJson>, secret: web::Data<WebData>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
@@ -61,7 +61,7 @@ async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<WebData>) -> impl 
     }
 }
 
-async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
+async fn sign_up(data: web::Json<UserInfoJson>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
@@ -118,7 +118,7 @@ async fn get_user_info() -> impl Responder {
     HttpResponse::InternalServerError().json("anyad")
 }
 
-async fn forgot_password(data: web::Json<UserInfo>) -> impl Responder {
+async fn forgot_password(data: web::Json<UserInfoJson>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
@@ -144,13 +144,13 @@ struct ResetPasswordQuery {
 }
 
 #[derive(Deserialize)]
-struct ResetPassword {
+struct ResetPasswordJson {
     password: String,
 }
 
 async fn reset_password(
     query: web::Query<ResetPasswordQuery>,
-    data: web::Json<ResetPassword>,
+    data: web::Json<ResetPasswordJson>,
 ) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
@@ -164,6 +164,31 @@ async fn reset_password(
     }
 }
 
-async fn change_password() -> impl Responder {
-    HttpResponse::InternalServerError().json("ANYAD")
+#[derive(Deserialize)]
+struct ChangePasswordJson {
+    old_password: String,
+    new_password: String,
+}
+
+async fn change_password(
+    auth_token: AuthenticationToken,
+    data: web::Json<ChangePasswordJson>,
+) -> impl Responder {
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match User::change_password(
+        &mut db,
+        auth_token.id as i32,
+        data.old_password.clone(),
+        data.new_password.clone(),
+    )
+    .await
+    {
+        Ok(_) => HttpResponse::Ok().json("Change password successful"),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Change password failed: {:?}", e))
+        }
+    }
 }

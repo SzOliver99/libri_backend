@@ -233,4 +233,38 @@ impl User {
             None => Err("Invalid or expired reset token".into()),
         }
     }
+
+    pub(crate) async fn change_password(
+        db: &mut Database,
+        user_id: i32,
+        old_password: String,
+        new_password: String,
+    ) -> Result<(), Box<dyn Error>> {
+        // Fetch the user to verify the old password
+        let user = sqlx::query!("SELECT * FROM users WHERE id = ?", user_id)
+            .fetch_optional(&db.pool)
+            .await?;
+
+        match user {
+            Some(user) => {
+                // Verify the old password
+                if !password::verify_password(&old_password, &user.password) {
+                    return Err("Old password is incorrect".into());
+                }
+
+                // Update the user's password
+                let hashed_password = password::hash_password(&new_password);
+                let _ = sqlx::query!(
+                    "UPDATE users SET password = ? WHERE id = ?",
+                    hashed_password,
+                    user_id
+                )
+                .execute(&db.pool)
+                .await;
+
+                Ok(())
+            }
+            None => Err("User not found".into()),
+        }
+    }
 }
