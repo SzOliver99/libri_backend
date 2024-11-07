@@ -2,7 +2,8 @@ use crate::{
     database::Database,
     extractors::authentication_token::AuthenticationToken,
     models::user::{User, UserGroup},
-    utils::jwt::encode_token,
+    server::WebData,
+    utils::jwt::generate_jwt_token,
 };
 use actix_web::{web, HttpResponse, Responder, Scope};
 use serde::{Deserialize, Serialize};
@@ -14,8 +15,8 @@ pub fn user_scope() -> Scope {
         .route("/protected", web::get().to(protected_route))
         .route("/sign-up", web::post().to(sign_up))
         .route("/info", web::get().to(get_user_info))
-        // .route("/forgot-password", web::post().to(forgot_password))
-        // .route("/reset-password", web::post().to(reset_password))
+        .route("/forgot-password", web::post().to(forgot_password))
+        .route("/reset-password", web::post().to(reset_password))
         .route("/change-password", web::post().to(change_password))
         .route("/books", web::get().to(get_user_books))
         .route("/cart", web::get().to(get_user_cart))
@@ -34,7 +35,7 @@ struct LoginResponse {
     group: UserGroup,
 }
 
-async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl Responder {
+async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<WebData>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
@@ -44,25 +45,20 @@ async fn sign_in(data: web::Json<UserInfo>, secret: web::Data<String>) -> impl R
         email: None,
         username: data.username.clone(),
         password: data.password.clone(),
-        group: UserGroup::User,
+        group: UserGroup::None,
     };
 
     match User::login_with_password(&mut db, user).await {
         Ok(logged_in_user) => HttpResponse::Ok().json(LoginResponse {
-            token: encode_token(logged_in_user.id.unwrap() as usize, secret).await,
+            token: generate_jwt_token(
+                logged_in_user.id.unwrap() as usize,
+                secret.auth_secret.clone(),
+            )
+            .await,
             group: logged_in_user.group,
         }),
         Err(e) => HttpResponse::Unauthorized().json(format!("Signin failed: {}", e)),
     }
-}
-
-#[derive(Serialize)]
-struct ProtectedResponse {
-    message: String
-}
-
-async fn protected_route(_auth_token: AuthenticationToken) -> impl Responder {
-    HttpResponse::Ok().json(ProtectedResponse { message: "Auth success".to_string() })
 }
 
 async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
@@ -81,6 +77,17 @@ async fn sign_up(data: web::Json<UserInfo>) -> impl Responder {
         Ok(_) => HttpResponse::Created().json("Signup successful"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Signup failed: {:?}", e)),
     }
+}
+
+#[derive(Serialize)]
+struct ProtectedResponse {
+    message: String,
+}
+
+async fn protected_route(_auth_token: AuthenticationToken) -> impl Responder {
+    HttpResponse::Ok().json(ProtectedResponse {
+        message: "Auth success".to_string(),
+    })
 }
 
 async fn get_user_books(auth_token: AuthenticationToken) -> impl Responder {
@@ -111,25 +118,25 @@ async fn get_user_info() -> impl Responder {
     HttpResponse::InternalServerError().json("anyad")
 }
 
-// async fn forgot_password(data: web::Json<UserInfo>) -> impl Responder {
-//     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-//         .await
-//         .unwrap();
+async fn forgot_password(data: web::Json<UserInfo>) -> impl Responder {
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
 
-//     let user = User {
-//         id: None,
-//         email: data.email.clone(),
-//         username: None,
-//         password: None,
-//         group: UserGroup::User,
-//     };
-//     match User::forgot_password(&mut db, user).await {
-//         Ok(_) => HttpResponse::Ok().json("Forgot password successful"),
-//         Err(e) => {
-//             HttpResponse::InternalServerError().json(format!("Forgot password failed: {:?}", e))
-//         }
-//     }
-// }
+    let user = User {
+        id: None,
+        email: data.email.clone(),
+        username: None,
+        password: None,
+        group: UserGroup::User,
+    };
+    match User::forgot_password(&mut db, user).await {
+        Ok(_) => HttpResponse::Ok().json("Forgot password successful"),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Forgot password failed: {:?}", e))
+        }
+    }
+}
 
 #[derive(Deserialize)]
 struct ResetPasswordQuery {
@@ -141,21 +148,21 @@ struct ResetPassword {
     password: String,
 }
 
-// async fn reset_password(
-//     query: web::Query<ResetPasswordQuery>,
-//     data: web::Json<ResetPassword>,
-// ) -> impl Responder {
-//     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-//         .await
-//         .unwrap();
+async fn reset_password(
+    query: web::Query<ResetPasswordQuery>,
+    data: web::Json<ResetPassword>,
+) -> impl Responder {
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
 
-//     match User::reset_password(&mut db, query.token.to_string(), data.password.to_string()).await {
-//         Ok(_) => HttpResponse::Ok().json("Reset password successful"),
-//         Err(e) => {
-//             HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))
-//         }
-//     }
-// }
+    match User::reset_password(&mut db, query.token.to_string(), data.password.to_string()).await {
+        Ok(_) => HttpResponse::Ok().json("Reset password successful"),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))
+        }
+    }
+}
 
 async fn change_password() -> impl Responder {
     HttpResponse::InternalServerError().json("ANYAD")

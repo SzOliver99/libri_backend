@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::extractors::authentication_token::Claims;
 
-pub async fn encode_token(id: usize, secret: web::Data<String>) -> String {
+pub async fn generate_jwt_token(id: usize, secret: String) -> String {
     let exp: usize = (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize;
     let claims: Claims = Claims { id, exp };
     let token = encode(
@@ -26,7 +26,7 @@ pub struct DecodeBody {
 
 pub async fn _decode_id_from_token(
     body: web::Json<DecodeBody>,
-    secret: web::Data<String>,
+    secret: String,
 ) -> Result<usize, JwtError> {
     let token_result: Result<TokenData<Claims>, JwtError> = decode::<Claims>(
         &body.token,

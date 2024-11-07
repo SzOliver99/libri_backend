@@ -12,6 +12,7 @@ use std::error::Error;
 pub enum UserGroup {
     User,
     Admin,
+    None,
 }
 
 // this is what bothers me
@@ -173,63 +174,63 @@ impl User {
         }
     }
 
-    // pub(crate) async fn forgot_password(
-    //     db: &mut Database,
-    //     user: User,
-    // ) -> Result<(), Box<dyn Error>> {
-    //     let user = sqlx::query_as!(Self, "SELECT * FROM users WHERE email = ?", user.email)
-    //         .fetch_optional(&db.pool)
-    //         .await?;
+    pub(crate) async fn forgot_password(
+        db: &mut Database,
+        user: User,
+    ) -> Result<(), Box<dyn Error>> {
+        let user = sqlx::query_as!(Self, "SELECT * FROM users WHERE email = ?", user.email)
+            .fetch_optional(&db.pool)
+            .await?;
 
-    //     match user {
-    //         Some(user) => {
-    //             // Generate a password reset token (you'll need to implement this)
-    //             let reset_token = email::generate_reset_token().await;
+        match user {
+            Some(user) => {
+                // Generate a password reset token (you'll need to implement this)
+                let reset_token = email::generate_reset_token().await;
 
-    //             // Store the reset token in the database (you'll need to implement this)
-    //             let _res = email::store_reset_token(db, user.id.unwrap(), &reset_token).await;
+                // Store the reset token in the database (you'll need to implement this)
+                let _res = email::store_reset_token(db, user.id.unwrap(), &reset_token).await;
 
-    //             // Send the password reset email
-    //             email::send_password_reset_email(&user.email.unwrap(), &reset_token).await?;
+                // Send the password reset email
+                email::send_password_reset_email(&user.email.unwrap(), &reset_token).await?;
 
-    //             Ok(())
-    //         }
-    //         None => Err("User not found".into()),
-    //     }
-    // }
+                Ok(())
+            }
+            None => Err("User not found".into()),
+        }
+    }
 
-    // pub(crate) async fn reset_password(
-    //     db: &mut Database,
-    //     token: String,
-    //     new_password: String,
-    // ) -> Result<(), Box<dyn Error>> {
-    //     // Verify the reset token
-    //     let user = sqlx::query!(
-    //         "SELECT * FROM reset_tokens WHERE token = ? AND tokenExpires > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
-    //         token
-    //     )
-    //     .fetch_optional(&db.pool)
-    //     .await?;
+    pub(crate) async fn reset_password(
+        db: &mut Database,
+        token: String,
+        new_password: String,
+    ) -> Result<(), Box<dyn Error>> {
+        // Verify the reset token
+        let user = sqlx::query!(
+            "SELECT * FROM reset_tokens WHERE token = ? AND tokenExpires > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
+            token
+        )
+        .fetch_optional(&db.pool)
+        .await?;
 
-    //     match user {
-    //         Some(user) => {
-    //             // Update the user's password
-    //             let hashed_password = password::hash_password(&new_password);
-    //             let _ = sqlx::query!(
-    //                 "UPDATE users SET password = ? WHERE id = ?",
-    //                 hashed_password,
-    //                 &user.userId
-    //             )
-    //             .execute(&db.pool)
-    //             .await;
+        match user {
+            Some(user) => {
+                // Update the user's password
+                let hashed_password = password::hash_password(&new_password);
+                let _ = sqlx::query!(
+                    "UPDATE users SET password = ? WHERE id = ?",
+                    hashed_password,
+                    &user.userId
+                )
+                .execute(&db.pool)
+                .await;
 
-    //             let _ = sqlx::query!("DELETE FROM reset_tokens WHERE userId = ?", user.userId)
-    //                 .execute(&db.pool)
-    //                 .await;
+                let _ = sqlx::query!("DELETE FROM reset_tokens WHERE userId = ?", user.userId)
+                    .execute(&db.pool)
+                    .await;
 
-    //             Ok(())
-    //         }
-    //         None => Err("Invalid or expired reset token".into()),
-    //     }
-    // }
+                Ok(())
+            }
+            None => Err("Invalid or expired reset token".into()),
+        }
+    }
 }
