@@ -92,7 +92,7 @@ impl Book {
     }
 
     pub async fn filter_by(db: &mut Database, query: &str) -> Result<Vec<Book>, Box<dyn Error>> {
-        let query = format!("%{}%", query);
+        let query = format!("%{}%", remove_whitespace(query));
         let books = sqlx::query_as!(
             Book,
             r#"SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books WHERE title LIKE ? OR author LIKE ?"#,
@@ -125,4 +125,8 @@ impl Book {
 
     //     Ok(())
     // }
+}
+
+fn remove_whitespace(s: &str) -> String {
+    s.chars().filter(|c| !c.is_whitespace()).collect()
 }
