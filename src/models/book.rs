@@ -91,6 +91,20 @@ impl Book {
         Ok(book)
     }
 
+    pub async fn filter_by(db: &mut Database, query: &str) -> Result<Vec<Book>, Box<dyn Error>> {
+        let query = format!("%{}%", query);
+        let books = sqlx::query_as!(
+            Book,
+            r#"SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books WHERE title LIKE ? OR author LIKE ?"#,
+            query,
+            query
+        )
+        .fetch_all(&db.pool)
+        .await?;
+
+        Ok(books)
+    }
+
     // pub async fn _buy_book(
     //     db: &mut Database,
     //     user_id: i32,
