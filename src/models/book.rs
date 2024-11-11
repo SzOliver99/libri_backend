@@ -92,12 +92,15 @@ impl Book {
     }
 
     pub async fn filter_by(db: &mut Database, query: &str) -> Result<Vec<Book>, Box<dyn Error>> {
-        let query = format!("%{}%", remove_whitespace(query));
+        let query_with_whitespace = format!("%{}%", query);
+        let query_without_whitespace = format!("%{}%", remove_whitespace(query));
         let books = sqlx::query_as!(
             Book,
-            r#"SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books WHERE title LIKE ? OR author LIKE ?"#,
-            query,
-            query
+            r#"SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books WHERE title LIKE ? OR author LIKE ? OR title LIKE ? OR author LIKE ?"#,
+            query_with_whitespace,
+            query_with_whitespace,
+            query_without_whitespace,
+            query_without_whitespace
         )
         .fetch_all(&db.pool)
         .await?;
