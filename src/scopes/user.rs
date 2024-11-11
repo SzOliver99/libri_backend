@@ -15,6 +15,7 @@ pub fn user_scope() -> Scope {
         .route("/protected", web::get().to(protected_route))
         .route("/sign-up", web::post().to(sign_up))
         .route("/info", web::get().to(get_user_info))
+        .route("/change-info", web::post().to(change_user_info))
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_password))
         .route("/change-password", web::post().to(change_password))
@@ -121,6 +122,31 @@ async fn get_user_info(auth_token: AuthenticationToken) -> impl Responder {
 
     match User::get_info(&mut db, auth_token.id as i32).await {
         Ok(user_info) => HttpResponse::Ok().json(user_info),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
+    }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ChangeUserJson {
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub phone_number: Option<String>,
+    pub billing_address: Option<String>,
+    pub city: Option<String>,
+    pub state_province: Option<String>,
+    pub postal_code: Option<String>,
+}
+
+async fn change_user_info(
+    auth_token: AuthenticationToken,
+    data: web::Json<ChangeUserJson>,
+) -> impl Responder {
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match User::change_info(&mut db, auth_token.id as i32, data.into_inner()).await {
+        Ok(_) => HttpResponse::Ok().json("Successfully modified"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
     }
 }

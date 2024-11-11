@@ -1,6 +1,7 @@
 use super::cart::Cart;
 use super::cart::CartBook;
 use crate::database::Database;
+use crate::scopes::user::ChangeUserJson;
 use crate::utils::email;
 use crate::utils::password;
 
@@ -296,5 +297,34 @@ impl User {
             }
             None => Err("User not found".into()),
         }
+    }
+
+    // TODO: rework so change only that not a None
+    pub(crate) async fn change_info(
+        db: &mut Database,
+        id: i32,
+        data: ChangeUserJson,
+    ) -> Result<(), Box<dyn Error>> {
+        println!("{:?}", data);
+        let asd = sqlx::query!(
+            r#"
+            UPDATE user_info
+            SET first_name = ?, last_name = ?, phone_number = ?, billing_address = ?, city = ?, state_province = ?, postal_code = ?
+            WHERE user_id = ?
+            "#,
+            data.first_name,
+            data.last_name,
+            data.phone_number,
+            data.billing_address,
+            data.city,
+            data.state_province,
+            data.postal_code,
+            id,
+        )
+        .execute(&db.pool)
+        .await?;
+
+        println!("{:?}", asd);
+        Ok(())
     }
 }
