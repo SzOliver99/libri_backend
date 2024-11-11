@@ -299,7 +299,7 @@ impl User {
         }
     }
 
-    // TODO: rework so change only that not a None
+    // TODO: rework so only change that value is not None!
     pub(crate) async fn change_info(
         db: &mut Database,
         id: i32,
