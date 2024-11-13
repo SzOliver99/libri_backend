@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS `books` (
   `isbn` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 INSERT INTO `books` (`id`, `title`, `author`, `price`, `description`, `publishedDate`, `isbn`) VALUES
 (1, 'Egri csillagok', 'Gárdonyi Géza', 1000, 'A historical novel set during the 16th century siege of Eger.', '1899-01-01', '9789634058766'),
 (2, 'Az ember tragédiája', 'Madách Imre', 800, 'A philosophical drama exploring human history and fate.', '1861-01-01', '9789633754312'),

@@ -15,10 +15,18 @@ pub fn user_scope() -> Scope {
         .route("/protected", web::get().to(protected_route))
         .route("/sign-up", web::post().to(sign_up))
         .route("/info", web::get().to(get_user_info))
-        .route("/change-info", web::post().to(change_user_info))
+        .route(
+            "/change/personal-information",
+            web::post().to(change_user_personal_information),
+        )
+        .route(
+            "/change/billing-information",
+            web::post().to(change_user_billing_information),
+        )
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_password))
         .route("/change-password", web::post().to(change_password))
+        .route("/delete-account", web::delete().to(delete_user_account))
         // .route("/books", web::get().to(get_user_books))
         .route("/cart", web::get().to(get_user_cart))
 }
@@ -122,32 +130,55 @@ async fn get_user_info(auth_token: AuthenticationToken) -> impl Responder {
 
     match User::get_info(&mut db, auth_token.id as i32).await {
         Ok(user_info) => HttpResponse::Ok().json(user_info),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
+        Err(e) => HttpResponse::InternalServerError()
+            .json(format!("Error getting user information: {:?}", e)),
     }
 }
 
-#[derive(Deserialize, Debug)]
-pub struct ChangeUserJson {
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
-    pub phone_number: Option<String>,
-    pub billing_address: Option<String>,
-    pub city: Option<String>,
-    pub state_province: Option<String>,
-    pub postal_code: Option<String>,
+#[derive(Deserialize)]
+pub struct ChangePersonalInformationJson {
+    pub first_name: String,
+    pub last_name: String,
+    pub phone_number: String,
 }
 
-async fn change_user_info(
+async fn change_user_personal_information(
     auth_token: AuthenticationToken,
-    data: web::Json<ChangeUserJson>,
+    data: web::Json<ChangePersonalInformationJson>,
 ) -> impl Responder {
     let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    match User::change_info(&mut db, auth_token.id as i32, data.into_inner()).await {
+    match User::change_personal_info(&mut db, auth_token.id as i32, data.into_inner()).await {
         Ok(_) => HttpResponse::Ok().json("Successfully modified"),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Error changing information: {:?}", e))
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ChangeBillingInformationJson {
+    pub billing_address: String,
+    pub city: String,
+    pub state_province: Option<String>,
+    pub postal_code: String,
+}
+
+async fn change_user_billing_information(
+    auth_token: AuthenticationToken,
+    data: web::Json<ChangeBillingInformationJson>,
+) -> impl Responder {
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match User::change_billing_info(&mut db, auth_token.id as i32, data.into_inner()).await {
+        Ok(_) => HttpResponse::Ok().json("Successfully modified"),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Error changing information: {:?}", e))
+        }
     }
 }
 
@@ -222,6 +253,19 @@ async fn change_password(
         Ok(_) => HttpResponse::Ok().json("Change password successful"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Change password failed: {:?}", e))
+        }
+    }
+}
+
+async fn delete_user_account(auth_token: AuthenticationToken) -> impl Responder {
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match User::delete_account(&mut db, auth_token.id as i32).await {
+        Ok(_) => HttpResponse::Ok().json("Account successfully deleted!"),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Failed to delete account: {:?}", e))
         }
     }
 }

@@ -1,7 +1,8 @@
 use super::cart::Cart;
 use super::cart::CartBook;
 use crate::database::Database;
-use crate::scopes::user::ChangeUserJson;
+use crate::scopes::user::ChangeBillingInformationJson;
+use crate::scopes::user::ChangePersonalInformationJson;
 use crate::utils::email;
 use crate::utils::password;
 
@@ -87,6 +88,13 @@ impl User {
             user.username,
             user.email,
             hashed_password
+        )
+        .execute(&db.pool)
+        .await?;
+
+        let _ = sqlx::query!(
+            r#"INSERT INTO user_info(user_id) VALUES(?)"#,
+            result.last_insert_id()
         )
         .execute(&db.pool)
         .await?;
@@ -299,22 +307,39 @@ impl User {
         }
     }
 
-    // TODO: rework so only change that value is not None!
-    pub(crate) async fn change_info(
+    pub(crate) async fn change_personal_info(
         db: &mut Database,
         id: i32,
-        data: ChangeUserJson,
+        data: ChangePersonalInformationJson,
     ) -> Result<(), Box<dyn Error>> {
-        println!("{:?}", data);
-        let asd = sqlx::query!(
+        let _ = sqlx::query!(
             r#"
             UPDATE user_info
-            SET first_name = ?, last_name = ?, phone_number = ?, billing_address = ?, city = ?, state_province = ?, postal_code = ?
+            SET first_name = ?, last_name = ?, phone_number = ?
             WHERE user_id = ?
             "#,
             data.first_name,
             data.last_name,
             data.phone_number,
+            id,
+        )
+        .execute(&db.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub(crate) async fn change_billing_info(
+        db: &mut Database,
+        id: i32,
+        data: ChangeBillingInformationJson,
+    ) -> Result<(), Box<dyn Error>> {
+        let _ = sqlx::query!(
+            r#"
+            UPDATE user_info
+            SET billing_address = ?, city = ?, state_province = ?, postal_code = ?
+            WHERE user_id = ?
+            "#,
             data.billing_address,
             data.city,
             data.state_province,
@@ -324,7 +349,14 @@ impl User {
         .execute(&db.pool)
         .await?;
 
-        println!("{:?}", asd);
+        Ok(())
+    }
+
+    pub(crate) async fn delete_account(db: &mut Database, id: i32) -> Result<(), Box<dyn Error>> {
+        let _ = sqlx::query!("DELETE FROM users WHERE id = ?", id)
+            .execute(&db.pool)
+            .await?;
+
         Ok(())
     }
 }

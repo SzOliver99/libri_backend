@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            UPDATE user_info\n            SET billing_address = ?, city = ?, state_province = ?, postal_code = ?\n            WHERE user_id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "7fecb7c303aeddcb27a68f9f98dd560119ab417d390c5132a973b1074daff849"
+}

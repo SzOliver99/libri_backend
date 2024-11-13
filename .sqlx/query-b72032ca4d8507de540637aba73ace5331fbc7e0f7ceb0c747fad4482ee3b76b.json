@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            UPDATE user_info\n            SET first_name = ?, last_name = ?, phone_number = ?\n            WHERE user_id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "b72032ca4d8507de540637aba73ace5331fbc7e0f7ceb0c747fad4482ee3b76b"
+}
