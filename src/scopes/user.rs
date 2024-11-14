@@ -24,7 +24,7 @@ pub fn user_scope() -> Scope {
             web::post().to(change_user_billing_information),
         )
         .route("/forgot-password", web::post().to(forgot_password))
-        .route("/reset-password", web::post().to(reset_password))
+        .route("/reset-password", web::post().to(reset_user_password))
         .route("/change-password", web::post().to(change_password))
         .route("/delete-account", web::delete().to(delete_user_account))
         // .route("/books", web::get().to(get_user_books))
@@ -212,7 +212,7 @@ struct ResetPasswordJson {
     password: String,
 }
 
-async fn reset_password(
+async fn reset_user_password(
     query: web::Query<ResetPasswordQuery>,
     data: web::Json<ResetPasswordJson>,
 ) -> impl Responder {

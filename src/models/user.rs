@@ -3,8 +3,8 @@ use super::cart::CartBook;
 use crate::database::Database;
 use crate::scopes::user::ChangeBillingInformationJson;
 use crate::scopes::user::ChangePersonalInformationJson;
+use crate::utils::credentials_hashing;
 use crate::utils::email;
-use crate::utils::password;
 
 use serde::Serialize;
 use sqlx::prelude::FromRow;
@@ -46,15 +46,8 @@ pub struct UserInfo {
     pub city: String,
     pub state_province: String,
     pub postal_code: String,
-}
-
-#[derive(Debug, Serialize, FromRow)]
-#[sqlx(rename_all = "camelCase")]
-pub struct UserBooks {
-    pub id: Option<i32>,
-    pub user_id: i32,
-    pub book_id: i32,
-    pub status: String,
+    pub username: String,
+    pub email: String,
 }
 
 impl User {
@@ -63,7 +56,6 @@ impl User {
         if user.username.is_none()
             || user.password.is_none()
             || user.email.is_none()
-            || user.email.as_ref().unwrap().is_empty()
         {
             return Err("All fields (email, username, password) are required".into());
         }
@@ -82,7 +74,7 @@ impl User {
         }
 
         // If user doesn't exist, create a new one
-        let hashed_password = password::hash_password(&user.password.unwrap());
+        let hashed_password = credentials_hashing::hash_password(&user.password.unwrap());
         let result = sqlx::query!(
             r#"INSERT INTO users(username, email, password) VALUES(?, ?, ?)"#,
             user.username,
@@ -113,9 +105,10 @@ impl User {
         let user_info = sqlx::query_as!(
             UserInfo,
             r#"
-            SELECT first_name, last_name, phone_number, billing_address, city, state_province, postal_code
+            SELECT first_name, last_name, phone_number, billing_address, city, state_province, postal_code, email, username
             FROM user_info
-            WHERE user_id = ?
+            JOIN users ON user_info.user_id = users.id
+            WHERE user_info.user_id = ?
             "#,
             user_id
         )
@@ -142,39 +135,21 @@ impl User {
 
         match user_data {
             Some(hashed_user) => {
-                if password::verify_password(
-                    &user.password.unwrap(),
-                    hashed_user.password.as_ref().unwrap(),
-                ) {
-                    Ok(Self {
-                        id: hashed_user.id,
-                        username: hashed_user.username,
-                        email: hashed_user.email,
-                        password: hashed_user.password,
-                        group: hashed_user.group,
-                    })
-                } else {
-                    Err("Invalid password".into())
+                match credentials_hashing::verify_password(&user.password.unwrap(),
+                hashed_user.password.as_ref().unwrap()) {
+                    true => Ok(Self {
+                    id: hashed_user.id,
+                    email: hashed_user.email,
+                    username: hashed_user.username,
+                    password: Some(hashed_user.password.unwrap()),
+                    group: hashed_user.group,
+                    }),
+                    false => Err("Password not valid".into())
                 }
             }
             None => Err("User not found".into()),
         }
     }
-
-    // pub async fn get_books(
-    //     db: &mut Database,
-    //     user_id: i32,
-    // ) -> Result<Vec<UserBooks>, Box<dyn Error>> {
-    //     let user_books = sqlx::query_as!(
-    //         UserBooks,
-    //         r#"SELECT id, userId as user_id, bookId as book_id, status FROM user_books WHERE userId = ?"#,
-    //         user_id
-    //     )
-    //     .fetch_all(&db.pool)
-    //     .await?;
-
-    //     Ok(user_books)
-    // }
 
     pub async fn get_cart(db: &mut Database, user_id: i32) -> Result<Cart, Box<dyn Error>> {
         let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE userId = ?"#, user_id)
@@ -213,7 +188,7 @@ impl User {
         }
     }
 
-    pub(crate) async fn forgot_password(
+    pub async fn forgot_password(
         db: &mut Database,
         user: User,
     ) -> Result<(), Box<dyn Error>> {
@@ -238,23 +213,23 @@ impl User {
         }
     }
 
-    pub(crate) async fn reset_password(
+    pub async fn reset_password(
         db: &mut Database,
         token: String,
         new_password: String,
     ) -> Result<(), Box<dyn Error>> {
         // Verify the reset token
-        let user = sqlx::query!(
+        let user_token = sqlx::query!(
             "SELECT * FROM reset_tokens WHERE token = ? AND tokenExpires > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
             token
         )
         .fetch_optional(&db.pool)
         .await?;
 
-        match user {
+        match user_token {
             Some(user) => {
                 // Update the user's password
-                let hashed_password = password::hash_password(&new_password);
+                let hashed_password = credentials_hashing::hash_password(&new_password);
                 let _ = sqlx::query!(
                     "UPDATE users SET password = ? WHERE id = ?",
                     hashed_password,
@@ -273,7 +248,7 @@ impl User {
         }
     }
 
-    pub(crate) async fn change_password(
+    pub async fn change_password(
         db: &mut Database,
         user_id: i32,
         old_password: String,
@@ -287,12 +262,12 @@ impl User {
         match user {
             Some(user) => {
                 // Verify the old password
-                if !password::verify_password(&old_password, &user.password) {
+                if !credentials_hashing::verify_password(&old_password, &user.password) {
                     return Err("Old password is incorrect".into());
                 }
 
                 // Update the user's password
-                let hashed_password = password::hash_password(&new_password);
+                let hashed_password = credentials_hashing::hash_password(&new_password);
                 let _ = sqlx::query!(
                     "UPDATE users SET password = ? WHERE id = ?",
                     hashed_password,
@@ -307,7 +282,7 @@ impl User {
         }
     }
 
-    pub(crate) async fn change_personal_info(
+    pub async fn change_personal_info(
         db: &mut Database,
         id: i32,
         data: ChangePersonalInformationJson,
@@ -329,7 +304,7 @@ impl User {
         Ok(())
     }
 
-    pub(crate) async fn change_billing_info(
+    pub async fn change_billing_info(
         db: &mut Database,
         id: i32,
         data: ChangeBillingInformationJson,
@@ -352,7 +327,7 @@ impl User {
         Ok(())
     }
 
-    pub(crate) async fn delete_account(db: &mut Database, id: i32) -> Result<(), Box<dyn Error>> {
+    pub async fn delete_account(db: &mut Database, id: i32) -> Result<(), Box<dyn Error>> {
         let _ = sqlx::query!("DELETE FROM users WHERE id = ?", id)
             .execute(&db.pool)
             .await?;

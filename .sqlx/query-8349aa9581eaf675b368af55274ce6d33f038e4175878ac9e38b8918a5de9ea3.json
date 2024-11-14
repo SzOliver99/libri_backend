@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\n            SELECT first_name, last_name, phone_number, billing_address, city, state_province, postal_code\n            FROM user_info\n            WHERE user_id = ?\n            ",
+  "query": "\n            SELECT first_name, last_name, phone_number, billing_address, city, state_province, postal_code, email, username\n            FROM user_info\n            JOIN users ON user_info.user_id = users.id\n            WHERE user_info.user_id = ?\n            ",
   "describe": {
     "columns": [
       {
@@ -65,6 +65,24 @@
           "flags": "NOT_NULL",
           "max_size": 40
         }
+      },
+      {
+        "ordinal": 7,
+        "name": "email",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "username",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
       }
     ],
     "parameters": {
@@ -77,8 +95,10 @@
       false,
       false,
       false,
+      false,
+      false,
       false
     ]
   },
-  "hash": "f24f57230b1ada1be27e05987ccc279bb707bd1b262cbecc4d1f29f7a42dfb36"
+  "hash": "8349aa9581eaf675b368af55274ce6d33f038e4175878ac9e38b8918a5de9ea3"
 }

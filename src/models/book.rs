@@ -107,27 +107,6 @@ impl Book {
 
         Ok(books)
     }
-
-    // pub async fn _buy_book(
-    //     db: &mut Database,
-    //     user_id: i32,
-    //     book_id: i32,
-    // ) -> Result<(), Box<dyn Error>> {
-    //     sqlx::query!(
-    //         r#"INSERT INTO user_books(userId, bookId, status) VALUES(?, ?, ?)"#,
-    //         user_id,
-    //         book_id,
-    //         "purchased"
-    //     )
-    //     .execute(&db.pool)
-    //     .await?;
-
-    //     // sqlx::query!("UPDATE books SET stock = stock - 1 WHERE id = ?", book_id)
-    //     //     .execute(&db.pool)
-    //     //     .await?;
-
-    //     Ok(())
-    // }
 }
 
 fn remove_whitespace(s: &str) -> String {
