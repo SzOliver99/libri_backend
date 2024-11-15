@@ -1,8 +1,8 @@
 use super::cart::Cart;
 use super::cart::CartBook;
 use crate::database::Database;
-use crate::scopes::user::ChangeBillingInformationJson;
-use crate::scopes::user::ChangePersonalInformationJson;
+use crate::scopes::user::ChangeUsernameJson;
+use crate::scopes::user::{ChangeBillingInformationJson, ChangeEmailJson, ChangePersonalInformationJson};
 use crate::utils::credentials_hashing;
 use crate::utils::email;
 
@@ -328,10 +328,83 @@ impl User {
     }
 
     pub async fn delete_account(db: &mut Database, id: i32) -> Result<(), Box<dyn Error>> {
-        let _ = sqlx::query!("DELETE FROM users WHERE id = ?", id)
+        let _ = sqlx::query!(
+                r#"
+                DELETE FROM users 
+                WHERE id = ?
+                "#, 
+                id,
+            )
             .execute(&db.pool)
             .await?;
 
         Ok(())
+    }
+    
+    pub(crate) async fn change_email(db: &mut Database, id: i32, data: ChangeEmailJson) -> Result<String, Box<dyn Error>> {
+        let is_exists = sqlx::query!(
+            "SELECT * FROM users WHERE email = ?",
+            data.new_email,
+        )
+        .fetch_optional(&db.pool)
+        .await?;
+
+        if is_exists.is_some() {
+            return Err("Email already exists".into());
+        }
+        
+        let user_data = sqlx::query_as!(
+            Self,
+            r#"SELECT * FROM users WHERE id = ?"#,
+            id
+        )
+        .fetch_optional(&db.pool)
+        .await?;
+
+        match user_data {
+            Some(hashed_user) => {
+                match credentials_hashing::verify_password(&data.password,
+                hashed_user.password.as_ref().unwrap()) {
+                    true => {
+                        let _ = sqlx::query!(
+                            r#"
+                            UPDATE users
+                            SET email = ?
+                            WHERE id = ?
+                            "#,
+                            data.new_email,
+                            id
+                        ).execute(&db.pool).await?;
+                        Ok("Email successfully changed!".into())
+                    },
+                    false => Err("Password not valid".into())
+                }
+            }
+            None => Err("User not found".into()),
+        }
+    }
+
+    pub(crate) async fn change_username(db: &mut Database, id: i32, data: ChangeUsernameJson) -> Result<String, Box<dyn Error>> {
+        let is_exists = sqlx::query!(
+            "SELECT * FROM users WHERE username = ?",
+            data.new_username,
+        )
+        .fetch_optional(&db.pool)
+        .await?;
+
+        if is_exists.is_some() {
+            return Err("Username is taken!".into());
+        }
+        
+        let _ = sqlx::query!(
+            r#"
+            UPDATE users
+            SET username = ?
+            WHERE id = ?
+            "#,
+            data.new_username,
+            id
+        ).execute(&db.pool).await?;
+        Ok("Username successfully changed!".into())
     }
 }

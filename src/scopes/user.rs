@@ -17,15 +17,17 @@ pub fn user_scope() -> Scope {
         .route("/info", web::get().to(get_user_info))
         .route(
             "/change/personal-information",
-            web::post().to(change_user_personal_information),
+            web::put().to(change_user_personal_information),
         )
         .route(
             "/change/billing-information",
-            web::post().to(change_user_billing_information),
+            web::put().to(change_user_billing_information),
         )
+        .route("/change/email", web::put().to(change_user_email))
+        .route("/change/username", web::put().to(change_user_username))
+        .route("/change/password", web::put().to(change_password))
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_user_password))
-        .route("/change-password", web::post().to(change_password))
         .route("/delete-account", web::delete().to(delete_user_account))
         // .route("/books", web::get().to(get_user_books))
         .route("/cart", web::get().to(get_user_cart))
@@ -132,6 +134,47 @@ async fn get_user_info(auth_token: AuthenticationToken) -> impl Responder {
         Ok(user_info) => HttpResponse::Ok().json(user_info),
         Err(e) => HttpResponse::InternalServerError()
             .json(format!("Error getting user information: {:?}", e)),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ChangeEmailJson {
+    pub new_email: String,
+    pub password: String,
+}
+
+async fn change_user_email(
+    auth_token: AuthenticationToken,
+    data: web::Json<ChangeEmailJson>,
+) -> impl Responder {
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match User::change_email(&mut db, auth_token.id as i32, data.into_inner()).await {
+        Ok(message) => HttpResponse::Ok().json(message),
+        Err(e) => HttpResponse::InternalServerError()
+            .json(format!("Error for changing email: {:?}", e)),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct ChangeUsernameJson {
+    pub new_username: String,
+}
+
+async fn change_user_username(
+    auth_token: AuthenticationToken,
+    data: web::Json<ChangeUsernameJson>,
+) -> impl Responder {
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match User::change_username(&mut db, auth_token.id as i32, data.into_inner()).await {
+        Ok(message) => HttpResponse::Ok().json(message),
+        Err(e) => HttpResponse::InternalServerError()
+            .json(format!("Error for changing username: {:?}", e)),
     }
 }
 
