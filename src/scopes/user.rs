@@ -15,6 +15,7 @@ pub fn user_scope() -> Scope {
         .route("/protected", web::get().to(protected_route))
         .route("/sign-up", web::post().to(sign_up))
         .route("/info", web::get().to(get_user_info))
+        .route("/is-admin", web::get().to(is_user_admin))
         .route(
             "/change/personal-information",
             web::put().to(change_user_personal_information),
@@ -135,6 +136,18 @@ async fn get_user_info(auth_token: AuthenticationToken) -> impl Responder {
         Err(e) => HttpResponse::InternalServerError()
             .json(format!("Error getting user information: {:?}", e)),
     }
+}
+
+async fn is_user_admin(auth_token: AuthenticationToken) -> impl Responder {
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    match User::is_admin(&mut db, auth_token.id as i32).await {
+        Ok(is_admin) => HttpResponse::Ok().json(is_admin),
+        Err(e) => HttpResponse::InternalServerError()
+            .json(format!("Error getting user group: {:?}", e)),
+    }    
 }
 
 #[derive(Deserialize)]

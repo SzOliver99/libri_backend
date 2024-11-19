@@ -386,7 +386,7 @@ impl User {
 
     pub(crate) async fn change_username(db: &mut Database, id: i32, data: ChangeUsernameJson) -> Result<String, Box<dyn Error>> {
         let is_exists = sqlx::query!(
-            "SELECT * FROM users WHERE username = ?",
+            r#"SELECT * FROM users WHERE username = ?"#,
             data.new_username,
         )
         .fetch_optional(&db.pool)
@@ -406,5 +406,15 @@ impl User {
             id
         ).execute(&db.pool).await?;
         Ok("Username successfully changed!".into())
+    }
+    
+    pub(crate) async fn is_admin(db: &mut Database, id: i32) -> Result<bool, Box<dyn Error>> {
+        let user_role = sqlx::query_as!(
+            User,
+            r#"SELECT * FROM users WHERE id = ?"#,
+            id
+        ).fetch_one(&db.pool).await?;
+        let user_group = user_role.group;
+        Ok(user_group == UserGroup::Admin)
     }
 }
