@@ -145,9 +145,10 @@ async fn is_user_admin(auth_token: AuthenticationToken) -> impl Responder {
 
     match User::is_admin(&mut db, auth_token.id as i32).await {
         Ok(is_admin) => HttpResponse::Ok().json(is_admin),
-        Err(e) => HttpResponse::InternalServerError()
-            .json(format!("Error getting user group: {:?}", e)),
-    }    
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Error getting user group: {:?}", e))
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -166,8 +167,9 @@ async fn change_user_email(
 
     match User::change_email(&mut db, auth_token.id as i32, data.into_inner()).await {
         Ok(message) => HttpResponse::Ok().json(message),
-        Err(e) => HttpResponse::InternalServerError()
-            .json(format!("Error for changing email: {:?}", e)),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Error for changing email: {:?}", e))
+        }
     }
 }
 
@@ -242,7 +244,8 @@ async fn forgot_password(data: web::Json<UserInfoJson>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
-    let client = redis::Client::open("redis://[::1]/").unwrap();
+    let client =
+        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
     let mut redis_con = client.get_connection().unwrap();
 
     let user = User {

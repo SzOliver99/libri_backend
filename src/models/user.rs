@@ -5,7 +5,9 @@ use super::cart::Cart;
 use super::cart::CartBook;
 use crate::database::Database;
 use crate::scopes::user::ChangeUsernameJson;
-use crate::scopes::user::{ChangeBillingInformationJson, ChangeEmailJson, ChangePersonalInformationJson};
+use crate::scopes::user::{
+    ChangeBillingInformationJson, ChangeEmailJson, ChangePersonalInformationJson,
+};
 use crate::utils::credentials_hashing;
 use crate::utils::email;
 
@@ -56,10 +58,7 @@ pub struct UserInfo {
 impl User {
     pub async fn new(db: &mut Database, user: User) -> Result<Self, Box<dyn Error>> {
         // Check if any required fields are null or empty
-        if user.username.is_none()
-            || user.password.is_none()
-            || user.email.is_none()
-        {
+        if user.username.is_none() || user.password.is_none() || user.email.is_none() {
             return Err("All fields (email, username, password) are required".into());
         }
 
@@ -138,16 +137,18 @@ impl User {
 
         match user_data {
             Some(hashed_user) => {
-                match credentials_hashing::verify_password(&user.password.unwrap(),
-                hashed_user.password.as_ref().unwrap()) {
+                match credentials_hashing::verify_password(
+                    &user.password.unwrap(),
+                    hashed_user.password.as_ref().unwrap(),
+                ) {
                     true => Ok(Self {
-                    id: hashed_user.id,
-                    email: hashed_user.email,
-                    username: hashed_user.username,
-                    password: Some(hashed_user.password.unwrap()),
-                    group: hashed_user.group,
+                        id: hashed_user.id,
+                        email: hashed_user.email,
+                        username: hashed_user.username,
+                        password: Some(hashed_user.password.unwrap()),
+                        group: hashed_user.group,
                     }),
-                    false => Err("Password not valid".into())
+                    false => Err("Password not valid".into()),
                 }
             }
             None => Err("User not found".into()),
@@ -220,7 +221,6 @@ impl User {
 
     pub async fn reset_password(
         db: &mut Database,
-        redis_con: &mut redis::Connection,
         token: String,
         new_password: String,
     ) -> Result<(), Box<dyn Error>> {
@@ -231,7 +231,6 @@ impl User {
         )
         .fetch_optional(&db.pool)
         .await?;
-
 
         match user_token {
             Some(user) => {
@@ -336,42 +335,41 @@ impl User {
 
     pub async fn delete_account(db: &mut Database, id: i32) -> Result<(), Box<dyn Error>> {
         let _ = sqlx::query!(
-                r#"
-                DELETE FROM users 
+            r#"
+                DELETE FROM users
                 WHERE id = ?
-                "#, 
-                id,
-            )
-            .execute(&db.pool)
-            .await?;
+                "#,
+            id,
+        )
+        .execute(&db.pool)
+        .await?;
 
         Ok(())
     }
-    
-    pub(crate) async fn change_email(db: &mut Database, id: i32, data: ChangeEmailJson) -> Result<String, Box<dyn Error>> {
-        let is_exists = sqlx::query!(
-            "SELECT * FROM users WHERE email = ?",
-            data.new_email,
-        )
-        .fetch_optional(&db.pool)
-        .await?;
+
+    pub(crate) async fn change_email(
+        db: &mut Database,
+        id: i32,
+        data: ChangeEmailJson,
+    ) -> Result<String, Box<dyn Error>> {
+        let is_exists = sqlx::query!("SELECT * FROM users WHERE email = ?", data.new_email,)
+            .fetch_optional(&db.pool)
+            .await?;
 
         if is_exists.is_some() {
             return Err("Email already exists".into());
         }
-        
-        let user_data = sqlx::query_as!(
-            Self,
-            r#"SELECT * FROM users WHERE id = ?"#,
-            id
-        )
-        .fetch_optional(&db.pool)
-        .await?;
+
+        let user_data = sqlx::query_as!(Self, r#"SELECT * FROM users WHERE id = ?"#, id)
+            .fetch_optional(&db.pool)
+            .await?;
 
         match user_data {
             Some(hashed_user) => {
-                match credentials_hashing::verify_password(&data.password,
-                hashed_user.password.as_ref().unwrap()) {
+                match credentials_hashing::verify_password(
+                    &data.password,
+                    hashed_user.password.as_ref().unwrap(),
+                ) {
                     true => {
                         let _ = sqlx::query!(
                             r#"
@@ -381,17 +379,23 @@ impl User {
                             "#,
                             data.new_email,
                             id
-                        ).execute(&db.pool).await?;
+                        )
+                        .execute(&db.pool)
+                        .await?;
                         Ok("Email successfully changed!".into())
-                    },
-                    false => Err("Password not valid".into())
+                    }
+                    false => Err("Password not valid".into()),
                 }
             }
             None => Err("User not found".into()),
         }
     }
 
-    pub(crate) async fn change_username(db: &mut Database, id: i32, data: ChangeUsernameJson) -> Result<String, Box<dyn Error>> {
+    pub(crate) async fn change_username(
+        db: &mut Database,
+        id: i32,
+        data: ChangeUsernameJson,
+    ) -> Result<String, Box<dyn Error>> {
         let is_exists = sqlx::query!(
             r#"SELECT * FROM users WHERE username = ?"#,
             data.new_username,
@@ -402,7 +406,7 @@ impl User {
         if is_exists.is_some() {
             return Err("Username is taken!".into());
         }
-        
+
         let _ = sqlx::query!(
             r#"
             UPDATE users
@@ -411,16 +415,16 @@ impl User {
             "#,
             data.new_username,
             id
-        ).execute(&db.pool).await?;
+        )
+        .execute(&db.pool)
+        .await?;
         Ok("Username successfully changed!".into())
     }
-    
+
     pub(crate) async fn is_admin(db: &mut Database, id: i32) -> Result<bool, Box<dyn Error>> {
-        let user_role = sqlx::query_as!(
-            User,
-            r#"SELECT * FROM users WHERE id = ?"#,
-            id
-        ).fetch_one(&db.pool).await?;
+        let user_role = sqlx::query_as!(User, r#"SELECT * FROM users WHERE id = ?"#, id)
+            .fetch_one(&db.pool)
+            .await?;
         let user_group = user_role.group;
         Ok(user_group == UserGroup::Admin)
     }
