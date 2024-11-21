@@ -243,6 +243,9 @@ async fn forgot_password(data: web::Json<UserInfoJson>) -> impl Responder {
         .await
         .unwrap();
 
+    let client = redis::Client::open("redis://127.0.0.1:6380/").unwrap();
+    let mut con = client.get_connection().unwrap();
+
     let user = User {
         id: None,
         email: data.email.clone(),

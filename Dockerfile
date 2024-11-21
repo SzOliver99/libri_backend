@@ -20,7 +20,8 @@ RUN cargo +nightly build --release --bin libri_backend
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends openssl \
+    && apt-get install -y --no-install-recommends openssl redis-server \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/libri_backend /usr/local/bin
+CMD ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
 ENTRYPOINT ["/usr/local/bin/libri_backend"]
