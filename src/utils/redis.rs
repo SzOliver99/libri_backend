@@ -2,10 +2,10 @@ extern crate redis;
 use std::error::Error;
 use redis::Commands;
 
-struct Redis;
+pub struct Redis;
 
 impl Redis {
-    fn set_user_token(con: &mut redis::Connection, user_id: u32, token: &str) -> redis::RedisResult<()> {
+    pub fn set_token_to_user(con: &mut redis::Connection, user_id: u32, token: &str) -> redis::RedisResult<()> {
         con.set(format!("user:{user_id}"), token)?;
         con.expire(format!("user:{user_id}"), 10)?;
 

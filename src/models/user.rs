@@ -220,6 +220,7 @@ impl User {
 
     pub async fn reset_password(
         db: &mut Database,
+        redis_con: &mut redis::Connection,
         token: String,
         new_password: String,
     ) -> Result<(), Box<dyn Error>> {
@@ -230,6 +231,7 @@ impl User {
         )
         .fetch_optional(&db.pool)
         .await?;
+
 
         match user_token {
             Some(user) => {
