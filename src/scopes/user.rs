@@ -242,9 +242,8 @@ async fn forgot_password(data: web::Json<UserInfoJson>) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
-
-    let client = redis::Client::open("redis://127.0.0.1:6380/").unwrap();
-    let mut con = client.get_connection().unwrap();
+    let client = redis::Client::open("redis://[::1]/").unwrap();
+    let mut redis_con = client.get_connection().unwrap();
 
     let user = User {
         id: None,
@@ -253,7 +252,7 @@ async fn forgot_password(data: web::Json<UserInfoJson>) -> impl Responder {
         password: None,
         group: UserGroup::User,
     };
-    match User::forgot_password(&mut db, user).await {
+    match User::forgot_password(&mut db, &mut redis_con, user).await {
         Ok(_) => HttpResponse::Ok().json("Forgot password successful"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Forgot password failed: {:?}", e))

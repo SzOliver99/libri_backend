@@ -1,3 +1,6 @@
+extern crate redis;
+use redis::Commands;
+
 use super::cart::Cart;
 use super::cart::CartBook;
 use crate::database::Database;
@@ -190,6 +193,7 @@ impl User {
 
     pub async fn forgot_password(
         db: &mut Database,
+        redis_con: &mut redis::Connection,
         user: User,
     ) -> Result<(), Box<dyn Error>> {
         let user = sqlx::query_as!(Self, "SELECT * FROM users WHERE email = ?", user.email)
@@ -200,9 +204,10 @@ impl User {
             Some(user) => {
                 // Generate a password reset token (you'll need to implement this)
                 let reset_token = email::generate_reset_token().await;
+                redis_con.set::<_, _, ()>(format!("user:{}", user.id.unwrap()), &reset_token)?;
 
                 // Store the reset token in the database (you'll need to implement this)
-                let _res = email::store_reset_token(db, user.id.unwrap(), &reset_token).await;
+                // let _res = email::store_reset_token(db, user.id.unwrap(), &reset_token).await;
 
                 // Send the password reset email
                 email::send_password_reset_email(&user.email.unwrap(), &reset_token).await?;
