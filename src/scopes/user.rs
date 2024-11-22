@@ -280,8 +280,18 @@ async fn reset_user_password(
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
+    let client =
+        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
+    let mut redis_con = client.get_connection().unwrap();
 
-    match User::reset_password(&mut db, query.token.to_string(), data.password.to_string()).await {
+    match User::reset_password(
+        &mut db,
+        &mut redis_con,
+        query.token.to_string(),
+        data.password.to_string(),
+    )
+    .await
+    {
         Ok(_) => HttpResponse::Ok().json("Reset password successful"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))

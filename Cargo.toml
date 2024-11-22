@@ -18,4 +18,4 @@ argon2 = "0.5.3"
 jsonwebtoken = "9.3.0"
 chrono = "0.4.38"
 actix-cors = "0.7.0"
-redis = "0.27.5"
+redis = { version = "0.27.5", features = ["tls-native-tls"] }

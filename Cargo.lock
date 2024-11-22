@@ -1825,6 +1825,7 @@ dependencies = [
  "arc-swap",
  "combine",
  "itoa",
+ "native-tls",
  "num-bigint",
  "percent-encoding",
  "ryu",

@@ -1,4 +1,5 @@
+pub mod credentials_hashing;
 pub mod email;
 pub mod jwt;
-pub mod credentials_hashing;
+pub mod redis;
 pub mod utils;

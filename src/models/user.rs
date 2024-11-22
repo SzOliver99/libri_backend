@@ -10,6 +10,7 @@ use crate::scopes::user::{
 };
 use crate::utils::credentials_hashing;
 use crate::utils::email;
+use crate::utils::redis::Redis;
 
 use serde::Serialize;
 use sqlx::prelude::FromRow;
@@ -205,10 +206,7 @@ impl User {
             Some(user) => {
                 // Generate a password reset token (you'll need to implement this)
                 let reset_token = email::generate_reset_token().await;
-                redis_con.set::<_, _, ()>(format!("user:{}", user.id.unwrap()), &reset_token)?;
-
-                // Store the reset token in the database (you'll need to implement this)
-                // let _res = email::store_reset_token(db, user.id.unwrap(), &reset_token).await;
+                Redis::set_token_to_user(redis_con, user.id.unwrap() as u32, &reset_token)?;
 
                 // Send the password reset email
                 email::send_password_reset_email(&user.email.unwrap(), &reset_token).await?;
@@ -221,32 +219,33 @@ impl User {
 
     pub async fn reset_password(
         db: &mut Database,
-        token: String,
+        redis_con: &mut redis::Connection,
+        reset_token: String,
         new_password: String,
     ) -> Result<(), Box<dyn Error>> {
         // Verify the reset token
-        let user_token = sqlx::query!(
-            "SELECT * FROM reset_tokens WHERE token = ? AND tokenExpires > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
-            token
-        )
-        .fetch_optional(&db.pool)
-        .await?;
+        let user_id = Redis::get_user_id_by_token(redis_con, &reset_token)?;
+        if user_id == -1 {
+            return Err("Token is not exists".into());
+        }
 
-        match user_token {
+        let user = sqlx::query_as!(Self, "SELECT * FROM users WHERE id = ?", user_id)
+            .fetch_optional(&db.pool)
+            .await?;
+
+        match user {
             Some(user) => {
                 // Update the user's password
                 let hashed_password = credentials_hashing::hash_password(&new_password);
                 let _ = sqlx::query!(
                     "UPDATE users SET password = ? WHERE id = ?",
                     hashed_password,
-                    &user.userId
+                    &user.id
                 )
                 .execute(&db.pool)
                 .await;
 
-                let _ = sqlx::query!("DELETE FROM reset_tokens WHERE userId = ?", user.userId)
-                    .execute(&db.pool)
-                    .await;
+                redis_con.del::<_, ()>(&reset_token)?;
 
                 Ok(())
             }

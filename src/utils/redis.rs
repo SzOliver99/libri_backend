@@ -1,23 +1,30 @@
 extern crate redis;
-use std::error::Error;
 use redis::Commands;
 
 pub struct Redis;
 
 impl Redis {
-    pub fn set_token_to_user(con: &mut redis::Connection, user_id: u32, token: &str) -> redis::RedisResult<()> {
-        con.set(format!("user:{user_id}"), token)?;
-        con.expire(format!("user:{user_id}"), 10)?;
+    pub fn set_token_to_user(
+        con: &mut redis::Connection,
+        user_id: u32,
+        token: &str,
+    ) -> redis::RedisResult<()> {
+        con.set::<_, _, String>(token, format!("user:{user_id}"))?;
+        con.expire::<_, ()>(token, 30)?;
 
         Ok(())
     }
 
-    fn get_user_token(con: &mut redis::Connection, user_id: u32) -> redis::RedisResult<String> {
-        let asd = con.exists::<_, bool>(format!("user:{user_id}"));
-        if *asd.as_ref().unwrap() {
-            let user_token = con.get(format!("user:{user_id}"))?;
-            return Ok(user_token);
+    pub fn get_user_id_by_token(
+        con: &mut redis::Connection,
+        token: &str,
+    ) -> redis::RedisResult<i32> {
+        let is_exists = con.exists::<_, bool>(&token)?;
+        if is_exists {
+            let redis_value = con.get::<_, String>(&token)?;
+            let user_id = redis_value[5..].parse::<i32>().unwrap();
+            return Ok(user_id);
         }
-        Ok("User token not exists".into())
+        Ok(-1) // Not exists
     }
 }
