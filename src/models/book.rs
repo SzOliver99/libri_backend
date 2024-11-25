@@ -96,7 +96,11 @@ impl Book {
         let query_without_whitespace = format!("%{}%", remove_whitespace(query));
         let books = sqlx::query_as!(
             Book,
-            r#"SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books WHERE title LIKE ? OR author LIKE ? OR title LIKE ? OR author LIKE ?"#,
+            r#"
+            SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn
+            FROM books
+            WHERE title LIKE ? OR author LIKE ? OR title LIKE ? OR author LIKE ?
+            "#,
             query_with_whitespace,
             query_with_whitespace,
             query_without_whitespace,

@@ -15,4 +15,3 @@ CREATE TABLE IF NOT EXISTS `cart_items` (
   FOREIGN KEY (`bookId`) REFERENCES `books` (`id`) ON DELETE CASCADE,
   UNIQUE KEY `cart_book_unique` (`cartId`, `bookId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-

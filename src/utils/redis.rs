@@ -10,7 +10,7 @@ impl Redis {
         token: &str,
     ) -> redis::RedisResult<()> {
         con.set::<_, _, String>(token, format!("user:{user_id}"))?;
-        con.expire::<_, ()>(token, 30)?;
+        con.expire::<_, ()>(token, 600)?;
 
         Ok(())
     }
