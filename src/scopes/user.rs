@@ -111,7 +111,7 @@ async fn send_authentication_code(data: web::Json<UserInfoJson>) -> impl Respond
         .unwrap();
 
     let client =
-        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
+        redis::Client::open("rediss://default:AVdIAAIjcDE1YjU4ZWViNWNiMzg0NWE5ODg3OTg0MmQ2OWU0ODZkMnAxMA@accepted-sawfish-22344.upstash.io:6379").unwrap();
     let mut redis_con = client.get_connection().unwrap();
 
     let user = User {
