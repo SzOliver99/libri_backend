@@ -9,7 +9,8 @@ use crate::scopes::user::{
     ChangeBillingInformationJson, ChangeEmailJson, ChangePersonalInformationJson,
 };
 use crate::utils::credentials_hashing;
-use crate::utils::email;
+use crate::utils::email::Email;
+use crate::utils::email::Token;
 use crate::utils::redis::Redis;
 
 use serde::Serialize;
@@ -156,6 +157,56 @@ impl User {
         }
     }
 
+    pub(crate) async fn login_with_email(
+        db: &mut Database,
+        redis_con: &mut redis::Connection,
+        code: &str,
+    ) -> Result<Self, Box<dyn Error>> {
+        let user_id = Redis::get_user_id_by_token(redis_con, code)?;
+
+        let user_data = sqlx::query_as!(Self, r#"SELECT * FROM users WHERE id = ?"#, user_id)
+            .fetch_optional(&db.pool)
+            .await?;
+
+        match user_data {
+            Some(hashed_user) => {
+                redis_con.del::<_, String>(code)?;
+                Ok(Self {
+                    id: hashed_user.id,
+                    email: hashed_user.email,
+                    username: hashed_user.username,
+                    password: Some(hashed_user.password.unwrap()),
+                    group: hashed_user.group,
+                })
+            }
+            None => Err("User not found".into()),
+        }
+    }
+
+    pub async fn send_authentication_code(
+        db: &mut Database,
+        redis_con: &mut redis::Connection,
+        user: User,
+    ) -> Result<(), Box<dyn Error>> {
+        let user = sqlx::query_as!(Self, "SELECT * FROM users WHERE email = ?", user.email)
+            .fetch_optional(&db.pool)
+            .await?;
+
+        match user {
+            Some(user) => {
+                // Generate a password reset token (you'll need to implement this)
+                let reset_token = Token::generate_six_digit_number();
+                Redis::set_token_to_user(redis_con, user.id.unwrap() as u32, &reset_token)?;
+
+                // Send the password reset email
+                Email::send_authentication_code(&user.email.unwrap(), &reset_token).await?;
+
+                Ok(())
+            }
+            None => Err("Email not found".into()),
+        }
+    }
+
     pub async fn get_cart(db: &mut Database, user_id: i32) -> Result<Cart, Box<dyn Error>> {
         let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE userId = ?"#, user_id)
             .fetch_optional(&db.pool)
@@ -205,11 +256,11 @@ impl User {
         match user {
             Some(user) => {
                 // Generate a password reset token (you'll need to implement this)
-                let reset_token = email::generate_reset_token().await;
+                let reset_token = Token::generate_reset_token();
                 Redis::set_token_to_user(redis_con, user.id.unwrap() as u32, &reset_token)?;
 
                 // Send the password reset email
-                email::send_password_reset_email(&user.email.unwrap(), &reset_token).await?;
+                Email::send_password_reset_email(&user.email.unwrap(), &reset_token).await?;
 
                 Ok(())
             }

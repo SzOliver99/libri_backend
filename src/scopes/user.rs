@@ -12,6 +12,8 @@ use std::env;
 pub fn user_scope() -> Scope {
     web::scope("/user")
         .route("/sign-in", web::post().to(sign_in))
+        .route("/sign-in/email", web::post().to(sign_in_with_email))
+        .route("/send-code/email", web::post().to(send_authentication_code))
         .route("/protected", web::get().to(protected_route))
         .route("/sign-up", web::post().to(sign_up))
         .route("/info", web::get().to(get_user_info))
@@ -69,7 +71,62 @@ async fn sign_in(data: web::Json<UserInfoJson>, secret: web::Data<WebData>) -> i
             .await,
             group: logged_in_user.group,
         }),
-        Err(e) => HttpResponse::Unauthorized().json(format!("Signin failed: {}", e)),
+        Err(e) => HttpResponse::Unauthorized().json(format!("Sign-in failed: {}", e)),
+    }
+}
+
+#[derive(Deserialize)]
+struct EmailAuthJson {
+    pub code: String,
+}
+
+async fn sign_in_with_email(
+    data: web::Json<EmailAuthJson>,
+    secret: web::Data<WebData>,
+) -> impl Responder {
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    let client =
+        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
+    let mut redis_con = client.get_connection().unwrap();
+
+    match User::login_with_email(&mut db, &mut redis_con, &data.code).await {
+        Ok(logged_in_user) => HttpResponse::Ok().json(LoginResponse {
+            token: generate_jwt_token(
+                logged_in_user.id.unwrap() as usize,
+                secret.auth_secret.clone(),
+            )
+            .await,
+            group: logged_in_user.group,
+        }),
+        Err(e) => HttpResponse::Unauthorized().json(format!("Sign-in failed: {}", e)),
+    }
+}
+
+async fn send_authentication_code(data: web::Json<UserInfoJson>) -> impl Responder {
+    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+
+    let client =
+        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
+    let mut redis_con = client.get_connection().unwrap();
+
+    let user = User {
+        id: None,
+        email: data.email.clone(),
+        username: None,
+        password: None,
+        group: UserGroup::None,
+    };
+
+    match User::send_authentication_code(&mut db, &mut redis_con, user).await {
+        Ok(_) => HttpResponse::Ok().json("Send authentication code successful"),
+        Err(e) => {
+            HttpResponse::Unauthorized().json(format!("Send authentication code failed: {:?}", e))
+        }
     }
 }
 
