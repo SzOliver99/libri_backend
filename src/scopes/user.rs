@@ -124,9 +124,8 @@ async fn send_authentication_code(data: web::Json<UserInfoJson>) -> impl Respond
 
     match User::send_authentication_code(&mut db, &mut redis_con, user).await {
         Ok(_) => HttpResponse::Ok().json("Send authentication code successful"),
-        Err(e) => {
-            HttpResponse::Unauthorized().json(format!("Send authentication code failed: {:?}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError()
+            .json(format!("Send authentication code failed: {:?}", e)),
     }
 }
 

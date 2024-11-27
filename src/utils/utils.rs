@@ -2,19 +2,24 @@ use crate::database::Database;
 
 use std::error::Error;
 
-pub(crate) fn string_to_fixed_array(input: &str) -> Result<[u8; 32], &'static str> {
-    let bytes = input.as_bytes();
-    
-    if bytes.len() > 32 {
-        return Err("Input string is too long; must be 32 bytes or less.");
-    }
-    
-    let mut array = [0u8; 32]; // Create a fixed-size array of 32 bytes
-    array[..bytes.len()].copy_from_slice(bytes); // Copy the bytes into the array
-    Ok(array) // Return the array
-}
+// pub(crate) fn string_to_fixed_array(input: &str) -> Result<[u8; 32], &'static str> {
+//     let bytes = input.as_bytes();
 
-pub async fn is_exists(db: &mut Database, table: &str, column: &str, value: &str) -> Result<bool, Box<dyn Error>> {
+//     if bytes.len() > 32 {
+//         return Err("Input string is too long; must be 32 bytes or less.");
+//     }
+
+//     let mut array = [0u8; 32]; // Create a fixed-size array of 32 bytes
+//     array[..bytes.len()].copy_from_slice(bytes); // Copy the bytes into the array
+//     Ok(array) // Return the array
+// }
+
+pub async fn is_exists(
+    db: &mut Database,
+    table: &str,
+    column: &str,
+    value: &str,
+) -> Result<bool, Box<dyn Error>> {
     let result = sqlx::query(&format!("SELECT * FROM {} WHERE {} = ?", table, column))
         .bind(value)
         .fetch_optional(&db.pool)
