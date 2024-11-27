@@ -110,23 +110,28 @@ async fn send_authentication_code(data: web::Json<UserInfoJson>) -> impl Respond
         .await
         .unwrap();
 
-    let client =
-        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
-    let mut redis_con = client.get_connection().unwrap();
+    println!(
+        "{:?}",
+        std::env::var("REDIS_URL").expect("REDIS_URL must be set")
+    );
+    // let client =
+    //     redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
+    // let mut redis_con = client.get_connection().unwrap();
 
-    let user = User {
-        id: None,
-        email: data.email.clone(),
-        username: None,
-        password: None,
-        group: UserGroup::None,
-    };
+    // let user = User {
+    //     id: None,
+    //     email: data.email.clone(),
+    //     username: None,
+    //     password: None,
+    //     group: UserGroup::None,
+    // };
 
-    match User::send_authentication_code(&mut db, &mut redis_con, user).await {
-        Ok(_) => HttpResponse::Ok().json("Send authentication code successful"),
-        Err(e) => HttpResponse::InternalServerError()
-            .json(format!("Send authentication code failed: {:?}", e)),
-    }
+    // match User::send_authentication_code(&mut db, &mut redis_con, user).await {
+    //     Ok(_) => HttpResponse::Ok().json("Send authentication code successful"),
+    //     Err(e) => HttpResponse::InternalServerError()
+    //         .json(format!("Send authentication code failed: {:?}", e)),
+    // }
+    HttpResponse::InternalServerError().json(format!("Send authentication code failed: {:?}", ""))
 }
 
 async fn sign_up(data: web::Json<UserInfoJson>) -> impl Responder {
