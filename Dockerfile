@@ -21,6 +21,7 @@ FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 RUN apt-get update -y \
     && apt-get install -y --no-install-recommends openssl \
+    && apt-get install -y ca-certificates \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/libri_backend /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/libri_backend"]
