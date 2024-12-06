@@ -3,7 +3,6 @@
 extern crate redis;
 use redis::Commands;
 
-use super::cart::{Cart, CartBook};
 use crate::database::Database;
 use crate::scopes::user::{
     ChangeBillingInformationJson, ChangeEmailJson, ChangePersonalInformationJson,
@@ -15,12 +14,11 @@ use crate::utils::{
     redis::Redis,
 };
 
-use serde::Serialize;
-use sqlx::prelude::FromRow;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 // Enum representing user groups
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum UserGroup {
     User,
     Admin,
@@ -39,7 +37,7 @@ impl From<String> for UserGroup {
 }
 
 // User struct representing a user in the system
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     pub id: Option<i32>,
     pub email: Option<String>,
@@ -49,7 +47,7 @@ pub struct User {
 }
 
 // UserInfo struct representing additional user information
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct UserInfo {
     pub first_name: String,
     pub last_name: String,
@@ -204,42 +202,6 @@ impl User {
                 Ok(())
             }
             None => Err("Email not found".into()),
-        }
-    }
-
-    // Get user's cart
-    pub async fn get_cart(db: &mut Database, user_id: i32) -> Result<Cart, Box<dyn Error>> {
-        let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE user_id = ?"#, user_id)
-            .fetch_optional(&db.pool)
-            .await?;
-
-        match cart {
-            Some(cart) => {
-                let books = sqlx::query_as!(
-                    CartBook,
-                    r#"
-                    SELECT book.id, book.title, book.author, book.price, book.isbn, cart_items.quantity
-                    FROM books book
-                    JOIN cart_items ON book.id = cart_items.book_id
-                    JOIN user_cart ON cart_items.cart_id = user_cart.id
-                    WHERE user_cart.user_id = ?
-                    "#,
-                    user_id
-                )
-                .fetch_all(&db.pool)
-                .await?;
-
-                Ok(Cart {
-                    id: Some(cart.id),
-                    user_id: cart.user_id,
-                    books,
-                })
-            }
-            None => {
-                // Create a new cart if user doesn't have one
-                Cart::create(db, user_id).await?;
-                Box::pin(Self::get_cart(db, user_id)).await
-            }
         }
     }
 

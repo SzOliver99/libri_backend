@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO transaction_books(transaction_history_id, book_id, quantity) VALUES(?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "2e3f699c0fd7f7608093c46aa4754443968dc7460ee8e50257fa1eaffb727802"
+}

@@ -1,7 +1,10 @@
 use crate::{
     database::Database,
     extractors::authentication_token::AuthenticationToken,
-    models::user::{User, UserGroup},
+    models::{
+        cart::Cart,
+        user::{User, UserGroup},
+    },
     server::WebData,
     utils::jwt::generate_jwt_token,
 };
@@ -176,7 +179,7 @@ async fn get_user_cart(auth_token: AuthenticationToken) -> impl Responder {
         .await
         .unwrap();
 
-    match User::get_cart(&mut db, auth_token.id as i32).await {
+    match Cart::get_cart(&mut db, auth_token.id as i32).await {
         Ok(cart) => HttpResponse::Ok().json(cart),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
     }
