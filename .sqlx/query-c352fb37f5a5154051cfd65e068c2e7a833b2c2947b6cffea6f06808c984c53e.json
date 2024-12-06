@@ -50,7 +50,7 @@
       },
       {
         "ordinal": 5,
-        "name": "imageSrc",
+        "name": "image_src",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL",
@@ -59,7 +59,7 @@
       },
       {
         "ordinal": 6,
-        "name": "publishedDate",
+        "name": "published_date",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",

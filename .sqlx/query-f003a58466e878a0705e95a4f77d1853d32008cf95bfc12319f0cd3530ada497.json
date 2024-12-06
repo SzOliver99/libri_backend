@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\n            SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn\n            FROM books\n            WHERE title LIKE ? OR author LIKE ? OR title LIKE ? OR author LIKE ?\n            ",
+  "query": "\n                    SELECT book.id, book.title, book.author, book.price, book.isbn, cart_items.quantity\n                    FROM books book\n                    JOIN cart_items ON book.id = cart_items.book_id\n                    JOIN user_cart ON cart_items.cart_id = user_cart.id\n                    WHERE user_cart.user_id = ?\n                    ",
   "describe": {
     "columns": [
       {
@@ -41,47 +41,27 @@
       },
       {
         "ordinal": 4,
-        "name": "description",
-        "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
-          "max_size": 4000
-        }
-      },
-      {
-        "ordinal": 5,
-        "name": "image_src",
-        "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL",
-          "max_size": 1020
-        }
-      },
-      {
-        "ordinal": 6,
-        "name": "published_date",
-        "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
-          "max_size": 1020
-        }
-      },
-      {
-        "ordinal": 7,
         "name": "isbn",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
           "max_size": 1020
         }
+      },
+      {
+        "ordinal": 5,
+        "name": "quantity",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL",
+          "max_size": 11
+        }
       }
     ],
     "parameters": {
-      "Right": 4
+      "Right": 1
     },
     "nullable": [
-      false,
-      false,
       false,
       false,
       false,
@@ -90,5 +70,5 @@
       false
     ]
   },
-  "hash": "a5bc2f1f89d11f3273a8f1ab58ecbc66ba4036520999d2e5eb2e5df3eccbace7"
+  "hash": "f003a58466e878a0705e95a4f77d1853d32008cf95bfc12319f0cd3530ada497"
 }

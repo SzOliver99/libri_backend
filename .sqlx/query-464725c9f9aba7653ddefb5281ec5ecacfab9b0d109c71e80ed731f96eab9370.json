@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books WHERE id = ?",
+  "query": "SELECT * FROM books",
   "describe": {
     "columns": [
       {
@@ -77,7 +77,7 @@
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 0
     },
     "nullable": [
       false,
@@ -90,5 +90,5 @@
       false
     ]
   },
-  "hash": "c38ef4902555b2c268c83eb8bd1d82edad0143747d7c572379d7f5b60325aaa4"
+  "hash": "464725c9f9aba7653ddefb5281ec5ecacfab9b0d109c71e80ed731f96eab9370"
 }

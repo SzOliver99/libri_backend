@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n            INSERT INTO cart_items (cart_id, book_id, quantity)\n            VALUES (?, ?, 1)\n            ON DUPLICATE KEY UPDATE quantity = quantity + 1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "dfa25c0322d5314c3dbb693c7e55da7f51822b9f0ed5b7bdf2d650359925d5b2"
+}

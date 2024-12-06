@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books",
+  "query": "\n            SELECT *\n            FROM books\n            WHERE title LIKE ? OR author LIKE ? OR title LIKE ? OR author LIKE ?\n            ",
   "describe": {
     "columns": [
       {
@@ -77,7 +77,7 @@
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 4
     },
     "nullable": [
       false,
@@ -90,5 +90,5 @@
       false
     ]
   },
-  "hash": "f815eae9be9c4b5830f30467a2288156da16dd8029099e05fa2555bcfb7ec3db"
+  "hash": "10eefe5a5be37fa6e13318ee26ebcf33e2898074a628b6ddbbda7335c2fb8f11"
 }

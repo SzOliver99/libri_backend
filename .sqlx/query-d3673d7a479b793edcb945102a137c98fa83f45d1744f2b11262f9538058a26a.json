@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT * FROM user_cart WHERE userId = ?",
+  "query": "SELECT * FROM user_cart WHERE user_id = ?",
   "describe": {
     "columns": [
       {
@@ -14,7 +14,7 @@
       },
       {
         "ordinal": 1,
-        "name": "userId",
+        "name": "user_id",
         "type_info": {
           "type": "Long",
           "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
@@ -30,5 +30,5 @@
       false
     ]
   },
-  "hash": "fc5cd86474e00e165390bda85ec40c912b1dac0341ffb03b85f2cc79740ee5d1"
+  "hash": "d3673d7a479b793edcb945102a137c98fa83f45d1744f2b11262f9538058a26a"
 }
