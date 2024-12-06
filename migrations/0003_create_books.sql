@@ -4,13 +4,13 @@ CREATE TABLE IF NOT EXISTS `books` (
   `author` varchar(50) NOT NULL,
   `price` int(5) NOT NULL,
   `description` varchar(255) NOT NULL,
-  `imageSrc` varchar(255) NOT NULL DEFAULT '',
-  `publishedDate` varchar(255) NOT NULL,
+  `image_src` varchar(255) NOT NULL DEFAULT '',
+  `published_date` varchar(255) NOT NULL,
   `isbn` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO `books` (`id`, `title`, `author`, `price`, `description`, `publishedDate`, `isbn`) VALUES
+INSERT INTO `books` (`id`, `title`, `author`, `price`, `description`, `published_date`, `isbn`) VALUES
 (1, 'Egri csillagok', 'Gárdonyi Géza', 1000, 'A historical novel set during the 16th century siege of Eger.', '1899-01-01', '9789634058766'),
 (2, 'Az ember tragédiája', 'Madách Imre', 800, 'A philosophical drama exploring human history and fate.', '1861-01-01', '9789633754312'),
 (3, 'Pál utcai fiúk', 'Molnár Ferenc', 2000, 'A novel about the adventures and struggles of a group of boys in Budapest.', '1906-01-01', '9789634058254'),

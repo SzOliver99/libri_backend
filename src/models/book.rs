@@ -5,7 +5,6 @@ use sqlx::prelude::FromRow;
 use std::error::Error;
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
-#[sqlx(rename_all = "camelCase")]
 pub struct Book {
     pub id: Option<i32>,
     pub title: String,
@@ -53,7 +52,7 @@ impl Book {
         }
 
         sqlx::query!(
-            r#"INSERT INTO books(title, author, price, description, imageSrc, publishedDate, isbn) VALUES(?, ?, ?, ?, ?, ?, ?)"#,
+            r#"INSERT INTO books(title, author, price, description, image_src, published_date, isbn) VALUES(?, ?, ?, ?, ?, ?, ?)"#,
             book.title,
             book.author,
             book.price,
@@ -69,24 +68,17 @@ impl Book {
     }
 
     pub async fn get_all(db: &mut Database) -> Result<Vec<Book>, Box<dyn Error>> {
-        let books = sqlx::query_as!(
-            Book,
-            r#"SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books"#
-        )
-        .fetch_all(&db.pool)
-        .await?;
+        let books = sqlx::query_as!(Book, r#"SELECT * FROM books"#)
+            .fetch_all(&db.pool)
+            .await?;
 
         Ok(books)
     }
 
     pub async fn get_by_id(db: &mut Database, book_id: i32) -> Result<Book, Box<dyn Error>> {
-        let book = sqlx::query_as!(
-            Book,
-            r#"SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn FROM books WHERE id = ?"#,
-            book_id
-        )
-        .fetch_one(&db.pool)
-        .await?;
+        let book = sqlx::query_as!(Book, r#"SELECT * FROM books WHERE id = ?"#, book_id)
+            .fetch_one(&db.pool)
+            .await?;
 
         Ok(book)
     }
@@ -97,7 +89,7 @@ impl Book {
         let books = sqlx::query_as!(
             Book,
             r#"
-            SELECT id, title, author, price, description, imageSrc as image_src, publishedDate as published_date, isbn
+            SELECT *
             FROM books
             WHERE title LIKE ? OR author LIKE ? OR title LIKE ? OR author LIKE ?
             "#,

@@ -1,17 +1,17 @@
 CREATE TABLE IF NOT EXISTS `user_cart` (
   `id` INT AUTO_INCREMENT,
-  `userId` INT NOT NULL,
+  `user_id` INT NOT NULL,
   PRIMARY KEY (`id`),
-  FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS `cart_items` (
   `id` INT AUTO_INCREMENT,
-  `cartId` INT NOT NULL,
-  `bookId` INT NOT NULL,
+  `cart_id` INT NOT NULL,
+  `book_id` INT NOT NULL,
   `quantity` INT NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
-  FOREIGN KEY (`cartId`) REFERENCES `user_cart` (`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`bookId`) REFERENCES `books` (`id`) ON DELETE CASCADE,
-  UNIQUE KEY `cart_book_unique` (`cartId`, `bookId`)
+  FOREIGN KEY (`cart_id`) REFERENCES `user_cart` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`book_id`) REFERENCES `books` (`id`) ON DELETE CASCADE,
+  UNIQUE KEY `cart_book_unique` (`cart_id`, `book_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
