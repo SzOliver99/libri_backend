@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use std::error::Error;
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
 pub struct Book {
     pub id: Option<i32>,
     pub title: String,

@@ -3,7 +3,7 @@ use crate::{
     extractors::authentication_token::AuthenticationToken,
     models::{
         cart::Cart,
-        user::{User, UserGroup},
+        user::{User, UserGroup}, user_history::TransactionHistory,
     },
     server::WebData,
     utils::jwt::generate_jwt_token,
@@ -37,6 +37,7 @@ pub fn user_scope() -> Scope {
         .route("/delete-account", web::delete().to(delete_user_account))
         // .route("/books", web::get().to(get_user_books))
         .route("/cart", web::get().to(get_user_cart))
+        .route("/history/get-all", web::get().to(get_user_history))
 }
 
 #[derive(Deserialize)]
@@ -161,18 +162,17 @@ async fn protected_route(_auth_token: AuthenticationToken) -> impl Responder {
     })
 }
 
-// async fn get_user_books(auth_token: AuthenticationToken) -> impl Responder {
-//     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-//         .await
-//         .unwrap();
-
-//     match User::get_books(&mut db, auth_token.id as i32).await {
-//         Ok(user_books) => HttpResponse::Ok().json(user_books),
-//         Err(e) => {
-//             HttpResponse::InternalServerError().json(format!("Error fetching user books: {:?}", e))
-//         }
-//     }
-// }
+async fn get_user_history(auth_token: AuthenticationToken) -> impl Responder {
+    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
+        .await
+        .unwrap();
+    match TransactionHistory::get_all(&mut db, auth_token.id as i32).await {
+        Ok(user_history) => HttpResponse::Ok().json(user_history),
+        Err(e) => {
+            HttpResponse::InternalServerError().json(format!("Error getting user history: {:?}", e))
+        }
+    }
+}
 
 async fn get_user_cart(auth_token: AuthenticationToken) -> impl Responder {
     let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
