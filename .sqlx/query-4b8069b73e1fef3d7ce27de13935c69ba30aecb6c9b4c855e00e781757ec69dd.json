@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT b.* FROM transaction_books tb JOIN books b ON b.id = tb.book_id WHERE tb.transaction_history_id IN (SELECT id FROM transaction_history WHERE user_id = ?)",
+  "query": "\n                SELECT DISTINCT b.id, b.title, b.author, b.price, b.description, b.published_date, b.isbn, tb.quantity\n                FROM books b\n                JOIN transaction_books tb ON tb.book_id = b.id\n                WHERE tb.transaction_history_id = ?\n                ",
   "describe": {
     "columns": [
       {
@@ -50,15 +50,6 @@
       },
       {
         "ordinal": 5,
-        "name": "image_src",
-        "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL",
-          "max_size": 1020
-        }
-      },
-      {
-        "ordinal": 6,
         "name": "published_date",
         "type_info": {
           "type": "VarString",
@@ -67,12 +58,21 @@
         }
       },
       {
-        "ordinal": 7,
+        "ordinal": 6,
         "name": "isbn",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | NO_DEFAULT_VALUE",
           "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "quantity",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL",
+          "max_size": 11
         }
       }
     ],
@@ -90,5 +90,5 @@
       false
     ]
   },
-  "hash": "3c53591599aacc0f932133bfaa8a763fec86b9b943cd0939901998552cf36aae"
+  "hash": "4b8069b73e1fef3d7ce27de13935c69ba30aecb6c9b4c855e00e781757ec69dd"
 }

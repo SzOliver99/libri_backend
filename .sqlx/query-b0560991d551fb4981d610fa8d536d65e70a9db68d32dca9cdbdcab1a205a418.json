@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT id, user_id, status, price, purchase_date FROM transaction_history WHERE user_id = ? ORDER BY purchase_date DESC",
+  "query": "SELECT id, user_id, status, price, purchase_date FROM transaction_history WHERE user_id = ?",
   "describe": {
     "columns": [
       {
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "779dad0b3b7d06061ded4404fe2ded019d328ecdb3c1b9f9f14d90cc9f8a4104"
+  "hash": "b0560991d551fb4981d610fa8d536d65e70a9db68d32dca9cdbdcab1a205a418"
 }
