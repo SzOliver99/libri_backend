@@ -62,13 +62,18 @@ async fn decrease_book_quantity(
     }
 }
 
-async fn buy_user_cart() -> impl Responder {
+async fn buy_user_cart(auth_token: AuthenticationToken) -> impl Responder {
     let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
         .await
         .unwrap();
 
-    let transaction = TransactionHistory::create(&mut db, 1, "InProgress")
-        .await
-        .unwrap();
-    HttpResponse::Ok().json(format!("{transaction:?}"))
+    // let transaction = TransactionHistory::create(&mut db, 1, "InProgress")
+    //     .await
+    //     .unwrap();
+    // HttpResponse::Ok().json(format!("{transaction:?}"))
+    match TransactionHistory::create(&mut db, auth_token.id as i32, "InProgress").await {
+        Ok(_) => HttpResponse::Ok().json("Transaction created"),
+        Err(e) => HttpResponse::InternalServerError()
+            .json(format!("Error in creating transaction: {:?}", e)),
+    }
 }

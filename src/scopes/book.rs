@@ -4,10 +4,10 @@ use serde::Deserialize;
 use std::env;
 
 pub fn book_scope() -> Scope {
-    web::scope("/books")
-        .route("/", web::post().to(create_book))
-        .route("/", web::get().to(get_books))
-        .route("/{id}", web::get().to(get_book_by_id))
+    web::scope("/book")
+        .route("/create", web::post().to(create_book))
+        .route("/get-all", web::get().to(get_books))
+        .route("/get/{id}", web::get().to(get_book_by_id))
         .route("/filter-by", web::post().to(filter_by_param))
     // .route("/{id}", web::put().to(update_book))
     // .route("/{id}", web::delete().to(delete_book))
