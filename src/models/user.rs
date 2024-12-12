@@ -359,7 +359,7 @@ impl User {
         db: &mut Database,
         id: i32,
         data: ChangeEmailJson,
-    ) -> Result<String, Box<dyn Error>> {
+    ) -> Result<(), Box<dyn Error>> {
         let is_exists = sqlx::query!("SELECT * FROM users WHERE email = ?", data.new_email)
             .fetch_optional(&db.pool)
             .await?;
@@ -389,7 +389,7 @@ impl User {
                     )
                     .execute(&db.pool)
                     .await?;
-                    Ok("Email successfully changed!".into())
+                    Ok(())
                 } else {
                     Err("Password not valid".into())
                 }

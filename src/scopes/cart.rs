@@ -7,17 +7,17 @@ use actix_web::{web, HttpResponse, Responder, Scope};
 use serde::Deserialize;
 use std::env;
 
-#[derive(Deserialize)]
-struct BookCartRequest {
-    book_id: i32,
-}
-
 pub fn cart_scope() -> Scope {
     web::scope("/cart")
         .route("/{user_id}", web::delete().to(delete_user_cart))
         .route("/book/", web::put().to(increment_book_quantity))
         .route("/book/", web::delete().to(decrease_book_quantity))
         .route("/purchase", web::post().to(buy_user_cart))
+}
+
+#[derive(Deserialize)]
+struct BookCartRequest {
+    book_id: i32,
 }
 
 async fn delete_user_cart(auth_token: AuthenticationToken) -> impl Responder {

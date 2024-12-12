@@ -2,7 +2,7 @@ use std::error::Error;
 
 use serde::{Deserialize, Serialize};
 
-use super::{book::Book, cart::Cart};
+use super::cart::Cart;
 use crate::database::Database;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,16 +28,21 @@ pub struct TransactionHistory {
     id: u64,
     user_id: i32,
     status: TransactionHistoryStatus,
-    books: Vec<Book>,
+    books: Vec<TransactionBooks>,
     price: i32,
     purchase_date: chrono::NaiveDateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TransactionBooks {
     id: u64,
-    transaction_history_id: i32,
-    book_id: i32,
+    title: String,
+    author: String,
+    price: i32,
+    description: String,
+    image_src: Option<String>,
+    published_date: String,
+    isbn: String,
     quantity: i32,
 }
 
@@ -92,45 +97,52 @@ impl TransactionHistory {
         user_id: i32,
     ) -> Result<Vec<TransactionHistory>, Box<dyn Error>> {
         let transaction_histories = sqlx::query!(
-            r#"SELECT id, user_id, status, price, purchase_date FROM transaction_history WHERE user_id = ? ORDER BY purchase_date DESC"#,
+            r#"SELECT id, user_id, status, price, purchase_date FROM transaction_history WHERE user_id = ?"#,
             user_id
         )
         .fetch_all(&db.pool)
         .await?;
 
-        let transaction_histories_books = sqlx::query!(
-            r#"SELECT b.* FROM transaction_books tb JOIN books b ON b.id = tb.book_id WHERE tb.transaction_history_id IN (SELECT id FROM transaction_history WHERE user_id = ?)"#,
-            user_id
-        )
-        .fetch_all(&db.pool)
-        .await?;
+        let mut result = Vec::new();
 
-        let transaction_books: Vec<Book> = transaction_histories_books
-            .into_iter()
-            .map(|row| Book {
-                id: Some(row.id),
-                title: row.title,
-                author: row.author,
-                price: row.price,
-                description: row.description,
-                image_src: None,
-                published_date: row.published_date,
-                isbn: row.isbn,
-            })
-            .collect();
+        for th in transaction_histories {
+            let transaction_histories_books = sqlx::query!(
+                r#"
+                SELECT DISTINCT b.id, b.title, b.author, b.price, b.description, b.published_date, b.isbn, tb.quantity
+                FROM books b
+                JOIN transaction_books tb ON tb.book_id = b.id
+                WHERE tb.transaction_history_id = ?
+                "#,
+                th.id
+            )
+            .fetch_all(&db.pool)
+            .await?;
 
-        let transaction_histories_with_books: Vec<TransactionHistory> = transaction_histories
-            .into_iter()
-            .map(|row| TransactionHistory {
-                id: row.id as u64,
-                user_id: row.user_id,
-                status: TransactionHistoryStatus::from(row.status.as_str()),
-                books: transaction_books.clone(),
-                price: row.price,
-                purchase_date: row.purchase_date,
-            })
-            .collect();
+            let transaction_books: Vec<TransactionBooks> = transaction_histories_books
+                .into_iter()
+                .map(|row| TransactionBooks {
+                    id: row.id as u64,
+                    title: row.title,
+                    author: row.author,
+                    price: row.price,
+                    description: row.description,
+                    image_src: None,
+                    published_date: row.published_date,
+                    isbn: row.isbn,
+                    quantity: row.quantity,
+                })
+                .collect();
 
-        Ok(transaction_histories_with_books)
+            result.push(TransactionHistory {
+                id: th.id as u64,
+                user_id: th.user_id,
+                status: TransactionHistoryStatus::from(th.status.as_str()),
+                books: transaction_books,
+                price: th.price,
+                purchase_date: th.purchase_date,
+            });
+        }
+
+        Ok(result)
     }
 }

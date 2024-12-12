@@ -3,7 +3,8 @@ use crate::{
     extractors::authentication_token::AuthenticationToken,
     models::{
         cart::Cart,
-        user::{User, UserGroup}, user_history::TransactionHistory,
+        user::{User, UserGroup},
+        user_history::TransactionHistory,
     },
     server::WebData,
     utils::jwt::generate_jwt_token,
@@ -225,7 +226,7 @@ async fn change_user_email(
         .unwrap();
 
     match User::change_email(&mut db, auth_token.id as i32, data.into_inner()).await {
-        Ok(message) => HttpResponse::Ok().json(message),
+        Ok(_) => HttpResponse::Ok().json("Email successfully changed!"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error for changing email: {:?}", e))
         }
@@ -246,7 +247,7 @@ async fn change_user_username(
         .unwrap();
 
     match User::change_username(&mut db, auth_token.id as i32, data.into_inner()).await {
-        Ok(message) => HttpResponse::Ok().json(message),
+        Ok(_) => HttpResponse::Ok().json("Username successfully changed!"),
         Err(e) => HttpResponse::InternalServerError()
             .json(format!("Error for changing username: {:?}", e)),
     }

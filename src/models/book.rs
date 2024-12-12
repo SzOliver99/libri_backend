@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use std::error::Error;
 
-#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+#[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Book {
     pub id: Option<i32>,
     pub title: String,
@@ -15,12 +15,6 @@ pub struct Book {
     pub published_date: String,
     pub isbn: String,
 }
-
-// #[derive(Debug, PartialEq, Eq)]
-// pub enum BookStatus {
-//     Purchased,
-//     Borrowed,
-// }
 
 impl Book {
     pub async fn create(db: &mut Database, book: Book) -> Result<(), Box<dyn Error>> {
