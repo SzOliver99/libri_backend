@@ -67,10 +67,6 @@ async fn buy_user_cart(auth_token: AuthenticationToken) -> impl Responder {
         .await
         .unwrap();
 
-    // let transaction = TransactionHistory::create(&mut db, 1, "InProgress")
-    //     .await
-    //     .unwrap();
-    // HttpResponse::Ok().json(format!("{transaction:?}"))
     match TransactionHistory::create(&mut db, auth_token.id as i32, "InProgress").await {
         Ok(_) => HttpResponse::Ok().json("Transaction created"),
         Err(e) => HttpResponse::InternalServerError()
