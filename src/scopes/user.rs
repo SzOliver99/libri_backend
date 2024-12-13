@@ -36,7 +36,6 @@ pub fn user_scope() -> Scope {
         .route("/forgot-password", web::post().to(forgot_password))
         .route("/reset-password", web::post().to(reset_user_password))
         .route("/delete-account", web::delete().to(delete_user_account))
-        // .route("/books", web::get().to(get_user_books))
         .route("/cart", web::get().to(get_user_cart))
         .route("/history/get-all", web::get().to(get_user_history))
 }
