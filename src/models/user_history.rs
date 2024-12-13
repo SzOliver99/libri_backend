@@ -30,7 +30,7 @@ pub struct TransactionHistory {
     status: TransactionHistoryStatus,
     books: Vec<TransactionBooks>,
     price: i32,
-    purchase_date: chrono::NaiveDateTime,
+    purchase_date: chrono::NaiveDate,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -55,7 +55,7 @@ impl TransactionHistory {
         let books_to_buy = Cart::get_cart(db, user_id).await?.books;
 
         // let purchase_date = chrono::Local::now().date_naive();
-        let purchase_date = chrono::Local::now().naive_local();
+        let purchase_date = chrono::Local::now().date_naive();
 
         let mut price = 0;
         for book in books_to_buy.iter() {
@@ -139,7 +139,7 @@ impl TransactionHistory {
                 status: TransactionHistoryStatus::from(th.status.as_str()),
                 books: transaction_books,
                 price: th.price,
-                purchase_date: th.purchase_date,
+                purchase_date: th.purchase_date.into(),
             });
         }
 
