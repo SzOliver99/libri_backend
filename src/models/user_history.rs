@@ -82,6 +82,10 @@ impl TransactionHistory {
             .await?;
         }
 
+        sqlx::query!(r#"DELETE FROM user_cart WHERE user_id = ?"#, user_id)
+            .execute(&db.pool)
+            .await?;
+
         Ok(Self {
             id: transaction.last_insert_id(),
             user_id,
