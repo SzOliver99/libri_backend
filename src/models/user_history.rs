@@ -52,9 +52,13 @@ impl TransactionHistory {
         user_id: i32,
         status: &str,
     ) -> Result<Self, Box<dyn Error>> {
+        // check if books in cart
         let books_to_buy = Cart::get_cart(db, user_id).await?.books;
+        println!("{:?}", books_to_buy);
+        if books_to_buy.is_empty() {
+            return Err("User has no product in cart".into());
+        }
 
-        // let purchase_date = chrono::Local::now().date_naive();
         let purchase_date = chrono::Local::now().date_naive();
 
         let mut price = 0;
