@@ -53,11 +53,7 @@ struct LoginResponse {
     group: UserGroup,
 }
 
-async fn sign_in(data: web::Json<UserInfoJson>, secret: web::Data<WebData>) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
+async fn sign_in(db: web::Data<Database>, data: web::Json<UserInfoJson>, secret: web::Data<WebData>) -> impl Responder {
     let user = User {
         id: None,
         email: None,
@@ -66,7 +62,7 @@ async fn sign_in(data: web::Json<UserInfoJson>, secret: web::Data<WebData>) -> i
         group: UserGroup::None,
     };
 
-    match User::login_with_password(&mut db, user).await {
+    match User::login_with_password(&db, user).await {
         Ok(logged_in_user) => HttpResponse::Ok().json(LoginResponse {
             token: generate_jwt_token(
                 logged_in_user.id.unwrap() as usize,
@@ -85,18 +81,15 @@ struct EmailAuthJson {
 }
 
 async fn sign_in_with_email(
+    db: web::Data<Database>, 
     data: web::Json<EmailAuthJson>,
     secret: web::Data<WebData>,
 ) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
     let client =
         redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
     let mut redis_con = client.get_connection().unwrap();
 
-    match User::login_with_email(&mut db, &mut redis_con, &data.code).await {
+    match User::login_with_email(&db, &mut redis_con, &data.code).await {
         Ok(logged_in_user) => HttpResponse::Ok().json(LoginResponse {
             token: generate_jwt_token(
                 logged_in_user.id.unwrap() as usize,
@@ -109,11 +102,7 @@ async fn sign_in_with_email(
     }
 }
 
-async fn send_authentication_code(data: web::Json<UserInfoJson>) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
+async fn send_authentication_code(db: web::Data<Database>, data: web::Json<UserInfoJson>) -> impl Responder {
     let client =
         redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
     let mut redis_con = client.get_connection().unwrap();
@@ -126,18 +115,14 @@ async fn send_authentication_code(data: web::Json<UserInfoJson>) -> impl Respond
         group: UserGroup::None,
     };
 
-    match User::send_authentication_code(&mut db, &mut redis_con, user).await {
+    match User::send_authentication_code(&db, &mut redis_con, user).await {
         Ok(_) => HttpResponse::Ok().json("Send authentication code successful"),
         Err(e) => HttpResponse::InternalServerError()
             .json(format!("Send authentication code failed: {:?}", e)),
     }
 }
 
-async fn sign_up(data: web::Json<UserInfoJson>) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
+async fn sign_up(db: web::Data<Database>, data: web::Json<UserInfoJson>) -> impl Responder {
     let user = User {
         id: None,
         email: data.email.clone(),
@@ -145,7 +130,7 @@ async fn sign_up(data: web::Json<UserInfoJson>) -> impl Responder {
         password: data.password.clone(),
         group: UserGroup::User,
     };
-    match User::new(&mut db, user).await {
+    match User::new(&db, user).await {
         Ok(_) => HttpResponse::Created().json("Signup successful"),
         Err(e) => HttpResponse::InternalServerError().json(format!("Signup failed: {:?}", e)),
     }
@@ -162,11 +147,8 @@ async fn protected_route(_auth_token: AuthenticationToken) -> impl Responder {
     })
 }
 
-async fn get_user_history(auth_token: AuthenticationToken) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-    match TransactionHistory::get_all(&mut db, auth_token.id as i32).await {
+async fn get_user_history(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
+    match TransactionHistory::get_all(&db, auth_token.id as i32).await {
         Ok(user_history) => HttpResponse::Ok().json(user_history),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error getting user history: {:?}", e))
@@ -174,35 +156,23 @@ async fn get_user_history(auth_token: AuthenticationToken) -> impl Responder {
     }
 }
 
-async fn get_user_cart(auth_token: AuthenticationToken) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match Cart::get_cart(&mut db, auth_token.id as i32).await {
+async fn get_user_cart(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
+    match Cart::get_cart(&db, auth_token.id as i32).await {
         Ok(cart) => HttpResponse::Ok().json(cart),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
     }
 }
 
-async fn get_user_info(auth_token: AuthenticationToken) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match User::get_info(&mut db, auth_token.id as i32).await {
+async fn get_user_info(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
+    match User::get_info(&db, auth_token.id as i32).await {
         Ok(user_info) => HttpResponse::Ok().json(user_info),
         Err(e) => HttpResponse::InternalServerError()
             .json(format!("Error getting user information: {:?}", e)),
     }
 }
 
-async fn is_user_admin(auth_token: AuthenticationToken) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match User::is_admin(&mut db, auth_token.id as i32).await {
+async fn is_user_admin(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
+    match User::is_admin(&db, auth_token.id as i32).await {
         Ok(is_admin) => HttpResponse::Ok().json(is_admin),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error getting user group: {:?}", e))
@@ -217,14 +187,11 @@ pub struct ChangeEmailJson {
 }
 
 async fn change_user_email(
+    db: web::Data<Database>, 
     auth_token: AuthenticationToken,
     data: web::Json<ChangeEmailJson>,
 ) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match User::change_email(&mut db, auth_token.id as i32, data.into_inner()).await {
+    match User::change_email(&db, auth_token.id as i32, data.into_inner()).await {
         Ok(_) => HttpResponse::Ok().json("Email successfully changed!"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error for changing email: {:?}", e))
@@ -238,14 +205,11 @@ pub struct ChangeUsernameJson {
 }
 
 async fn change_user_username(
+    db: web::Data<Database>,
     auth_token: AuthenticationToken,
     data: web::Json<ChangeUsernameJson>,
 ) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match User::change_username(&mut db, auth_token.id as i32, data.into_inner()).await {
+    match User::change_username(&db, auth_token.id as i32, data.into_inner()).await {
         Ok(_) => HttpResponse::Ok().json("Username successfully changed!"),
         Err(e) => HttpResponse::InternalServerError()
             .json(format!("Error for changing username: {:?}", e)),
@@ -260,14 +224,11 @@ pub struct ChangePersonalInformationJson {
 }
 
 async fn change_user_personal_information(
+    db: web::Data<Database>, 
     auth_token: AuthenticationToken,
     data: web::Json<ChangePersonalInformationJson>,
 ) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match User::change_personal_info(&mut db, auth_token.id as i32, data.into_inner()).await {
+    match User::change_personal_info(&db, auth_token.id as i32, data.into_inner()).await {
         Ok(_) => HttpResponse::Ok().json("Successfully modified"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error changing information: {:?}", e))
@@ -284,14 +245,11 @@ pub struct ChangeBillingInformationJson {
 }
 
 async fn change_user_billing_information(
+    db: web::Data<Database>,
     auth_token: AuthenticationToken,
     data: web::Json<ChangeBillingInformationJson>,
 ) -> impl Responder {
-    let mut db = Database::new(&std::env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match User::change_billing_info(&mut db, auth_token.id as i32, data.into_inner()).await {
+    match User::change_billing_info(&db, auth_token.id as i32, data.into_inner()).await {
         Ok(_) => HttpResponse::Ok().json("Successfully modified"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Error changing information: {:?}", e))
@@ -299,10 +257,7 @@ async fn change_user_billing_information(
     }
 }
 
-async fn forgot_password(data: web::Json<UserInfoJson>) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
+async fn forgot_password(db: web::Data<Database>, data: web::Json<UserInfoJson>) -> impl Responder {
     let client =
         redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
     let mut redis_con = client.get_connection().unwrap();
@@ -314,7 +269,7 @@ async fn forgot_password(data: web::Json<UserInfoJson>) -> impl Responder {
         password: None,
         group: UserGroup::User,
     };
-    match User::forgot_password(&mut db, &mut redis_con, user).await {
+    match User::forgot_password(&db, &mut redis_con, user).await {
         Ok(_) => HttpResponse::Ok().json("Forgot password successful"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Forgot password failed: {:?}", e))
@@ -333,18 +288,16 @@ struct ResetPasswordJson {
 }
 
 async fn reset_user_password(
+    db: web::Data<Database>, 
     query: web::Query<ResetPasswordQuery>,
     data: web::Json<ResetPasswordJson>,
 ) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
     let client =
         redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
     let mut redis_con = client.get_connection().unwrap();
 
     match User::reset_password(
-        &mut db,
+        &db,
         &mut redis_con,
         query.token.to_string(),
         data.password.to_string(),
@@ -365,15 +318,12 @@ struct ChangePasswordJson {
 }
 
 async fn change_password(
+    db: web::Data<Database>, 
     auth_token: AuthenticationToken,
     data: web::Json<ChangePasswordJson>,
 ) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
     match User::change_password(
-        &mut db,
+        &db,
         auth_token.id as i32,
         data.old_password.clone(),
         data.new_password.clone(),
@@ -387,12 +337,8 @@ async fn change_password(
     }
 }
 
-async fn delete_user_account(auth_token: AuthenticationToken) -> impl Responder {
-    let mut db = Database::new(&env::var("DATABASE_URL").unwrap())
-        .await
-        .unwrap();
-
-    match User::delete_account(&mut db, auth_token.id as i32).await {
+async fn delete_user_account(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
+    match User::delete_account(&db, auth_token.id as i32).await {
         Ok(_) => HttpResponse::Ok().json("Account successfully deleted!"),
         Err(e) => {
             HttpResponse::InternalServerError().json(format!("Failed to delete account: {:?}", e))

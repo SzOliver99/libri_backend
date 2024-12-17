@@ -62,7 +62,7 @@ pub struct UserInfo {
 
 impl User {
     // Create a new user
-    pub async fn new(db: &mut Database, user: User) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(db: &Database, user: User) -> Result<Self, Box<dyn Error>> {
         // Check for required fields
         if user.username.is_none() || user.password.is_none() || user.email.is_none() {
             return Err("All fields (email, username, password) are required".into());
@@ -103,7 +103,7 @@ impl User {
     }
 
     // Get user information
-    pub async fn get_info(db: &mut Database, user_id: i32) -> Result<UserInfo, Box<dyn Error>> {
+    pub async fn get_info(db: &Database, user_id: i32) -> Result<UserInfo, Box<dyn Error>> {
         let user_info = sqlx::query_as!(
             UserInfo,
             r#"
@@ -125,7 +125,7 @@ impl User {
 
     // Login with username and password
     pub async fn login_with_password(
-        db: &mut Database,
+        db: &Database,
         user: User,
     ) -> Result<Self, Box<dyn Error>> {
         let user_data = sqlx::query_as!(
@@ -159,7 +159,7 @@ impl User {
 
     // Login with email and token
     pub(crate) async fn login_with_email(
-        db: &mut Database,
+        db: &Database,
         redis_con: &mut redis::Connection,
         code: &str,
     ) -> Result<Self, Box<dyn Error>> {
@@ -186,7 +186,7 @@ impl User {
 
     // Send authentication code for password reset
     pub async fn send_authentication_code(
-        db: &mut Database,
+        db: &Database,
         redis_con: &mut redis::Connection,
         user: User,
     ) -> Result<(), Box<dyn Error>> {
@@ -207,7 +207,7 @@ impl User {
 
     // Handle password reset request
     pub async fn forgot_password(
-        db: &mut Database,
+        db: &Database,
         redis_con: &mut redis::Connection,
         user: User,
     ) -> Result<(), Box<dyn Error>> {
@@ -228,7 +228,7 @@ impl User {
 
     // Reset user's password
     pub async fn reset_password(
-        db: &mut Database,
+        db: &Database,
         redis_con: &mut redis::Connection,
         reset_token: String,
         new_password: String,
@@ -262,7 +262,7 @@ impl User {
 
     // Change user's password
     pub async fn change_password(
-        db: &mut Database,
+        db: &Database,
         user_id: i32,
         old_password: String,
         new_password: String,
@@ -294,7 +294,7 @@ impl User {
 
     // Change user's personal information
     pub async fn change_personal_info(
-        db: &mut Database,
+        db: &Database,
         id: i32,
         data: ChangePersonalInformationJson,
     ) -> Result<(), Box<dyn Error>> {
@@ -317,7 +317,7 @@ impl User {
 
     // Change user's billing information
     pub async fn change_billing_info(
-        db: &mut Database,
+        db: &Database,
         id: i32,
         data: ChangeBillingInformationJson,
     ) -> Result<(), Box<dyn Error>> {
@@ -340,7 +340,7 @@ impl User {
     }
 
     // Delete user account
-    pub async fn delete_account(db: &mut Database, id: i32) -> Result<(), Box<dyn Error>> {
+    pub async fn delete_account(db: &Database, id: i32) -> Result<(), Box<dyn Error>> {
         let _ = sqlx::query!(
             r#"
                 DELETE FROM users
@@ -356,7 +356,7 @@ impl User {
 
     // Change user's email
     pub(crate) async fn change_email(
-        db: &mut Database,
+        db: &Database,
         id: i32,
         data: ChangeEmailJson,
     ) -> Result<(), Box<dyn Error>> {
@@ -400,7 +400,7 @@ impl User {
 
     // Change user's username
     pub(crate) async fn change_username(
-        db: &mut Database,
+        db: &Database,
         id: i32,
         data: ChangeUsernameJson,
     ) -> Result<String, Box<dyn Error>> {
@@ -426,7 +426,7 @@ impl User {
     }
 
     // Check if user is an admin
-    pub(crate) async fn is_admin(db: &mut Database, id: i32) -> Result<bool, Box<dyn Error>> {
+    pub(crate) async fn is_admin(db: &Database, id: i32) -> Result<bool, Box<dyn Error>> {
         let user_role = sqlx::query_as!(User, r#"SELECT * FROM users WHERE id = ?"#, id)
             .fetch_one(&db.pool)
             .await?;
@@ -435,7 +435,7 @@ impl User {
 
     // Check if a record exists in a specified table
     pub async fn is_exists(
-        db: &mut Database,
+        db: &Database,
         table: &str,
         column: &str,
         value: &str,
@@ -449,7 +449,7 @@ impl User {
     }
 
     // Check if a user exists by user ID
-    pub async fn is_user_exists(db: &mut Database, user_id: i32) -> Result<bool, Box<dyn Error>> {
+    pub async fn is_user_exists(db: &Database, user_id: i32) -> Result<bool, Box<dyn Error>> {
         Self::is_exists(db, "users", "id", user_id.to_string().as_str()).await
     }
 }

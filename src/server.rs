@@ -1,5 +1,4 @@
 use crate::database::Database;
-
 use crate::scopes;
 
 use actix_cors::Cors;
@@ -7,6 +6,8 @@ use actix_web::{http, web};
 use actix_web::{middleware::Logger, App, HttpServer};
 use env_logger::Env;
 use std::env;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 pub struct WebData {
     pub auth_secret: String,
@@ -26,7 +27,7 @@ impl Server {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
         // Create the database
-        let _db = Database::new(&database_url).await.unwrap();
+        let db = Database::new(&database_url).await.unwrap();
 
         HttpServer::new(move || {
             let cors = Cors::default()
@@ -42,6 +43,7 @@ impl Server {
             App::new()
                 .wrap(cors)
                 .wrap(Logger::default())
+                .app_data(web::Data::<Database>::new(db.clone()))
                 .app_data(web::Data::<WebData>::new(WebData {
                     auth_secret: auth_secret.clone(),
                 }))

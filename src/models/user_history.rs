@@ -101,7 +101,7 @@ impl TransactionHistory {
     }
 
     pub async fn get_all(
-        db: &mut Database,
+        db: &Database,
         user_id: i32,
     ) -> Result<Vec<TransactionHistory>, Box<dyn Error>> {
         let transaction_histories = sqlx::query!(

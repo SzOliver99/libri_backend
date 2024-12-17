@@ -23,7 +23,7 @@ pub struct CartBook {
 }
 
 impl Cart {
-    pub async fn create(db: &mut Database, user_id: i32) -> Result<(), Box<dyn Error>> {
+    pub async fn create(db: &Database, user_id: i32) -> Result<(), Box<dyn Error>> {
         if !User::is_user_exists(db, user_id).await? {
             return Err("User not found".into());
         }
@@ -46,7 +46,7 @@ impl Cart {
     }
 
     // Get user's cart
-    pub async fn get_cart(db: &mut Database, user_id: i32) -> Result<Cart, Box<dyn Error>> {
+    pub async fn get_cart(db: &Database, user_id: i32) -> Result<Cart, Box<dyn Error>> {
         let cart = sqlx::query!(r#"SELECT * FROM user_cart WHERE user_id = ?"#, user_id)
             .fetch_optional(&db.pool)
             .await?;
@@ -75,13 +75,13 @@ impl Cart {
             }
             None => {
                 // Create a new cart if user doesn't have one
-                Cart::create(db, user_id).await?;
+                Cart::create(&db, user_id).await?;
                 Box::pin(Self::get_cart(db, user_id)).await
             }
         }
     }
 
-    pub async fn delete_cart(db: &mut Database, user_id: i32) -> Result<(), Box<dyn Error>> {
+    pub async fn delete_cart(db: &Database, user_id: i32) -> Result<(), Box<dyn Error>> {
         sqlx::query!(r#"DELETE FROM user_cart WHERE user_id = ?"#, user_id)
             .execute(&db.pool)
             .await?;
@@ -89,7 +89,7 @@ impl Cart {
     }
 
     pub(crate) async fn increment_book_quantity(
-        db: &mut Database,
+        db: &Database,
         user_id: i32,
         book_id: i32,
     ) -> Result<(), Box<dyn Error>> {
@@ -124,7 +124,7 @@ impl Cart {
     }
 
     pub async fn decrease_book_quantity(
-        db: &mut Database,
+        db: &Database,
         user_id: i32,
         book_id: i32,
     ) -> Result<(), Box<dyn Error>> {
