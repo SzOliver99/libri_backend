@@ -11,7 +11,6 @@ use crate::{
 };
 use actix_web::{web, HttpResponse, Responder, Scope};
 use serde::{Deserialize, Serialize};
-use std::env;
 
 pub fn user_scope() -> Scope {
     web::scope("/user")
@@ -85,9 +84,7 @@ async fn sign_in_with_email(
     data: web::Json<EmailAuthJson>,
     secret: web::Data<WebData>,
 ) -> impl Responder {
-    let client =
-        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
-    let mut redis_con = client.get_connection().unwrap();
+    let mut redis_con = db.redis.get_connection().unwrap();
 
     match User::login_with_email(&db, &mut redis_con, &data.code).await {
         Ok(logged_in_user) => HttpResponse::Ok().json(LoginResponse {
@@ -103,9 +100,7 @@ async fn sign_in_with_email(
 }
 
 async fn send_authentication_code(db: web::Data<Database>, data: web::Json<UserInfoJson>) -> impl Responder {
-    let client =
-        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
-    let mut redis_con = client.get_connection().unwrap();
+    let mut redis_con = db.redis.get_connection().unwrap();
 
     let user = User {
         id: None,
@@ -258,9 +253,7 @@ async fn change_user_billing_information(
 }
 
 async fn forgot_password(db: web::Data<Database>, data: web::Json<UserInfoJson>) -> impl Responder {
-    let client =
-        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
-    let mut redis_con = client.get_connection().unwrap();
+    let mut redis_con = db.redis.get_connection().unwrap();
 
     let user = User {
         id: None,
@@ -292,9 +285,7 @@ async fn reset_user_password(
     query: web::Query<ResetPasswordQuery>,
     data: web::Json<ResetPasswordJson>,
 ) -> impl Responder {
-    let client =
-        redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set")).unwrap();
-    let mut redis_con = client.get_connection().unwrap();
+    let mut redis_con = db.redis.get_connection().unwrap();
 
     match User::reset_password(
         &db,

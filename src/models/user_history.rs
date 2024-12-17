@@ -48,7 +48,7 @@ pub struct TransactionBooks {
 
 impl TransactionHistory {
     pub async fn create(
-        db: &mut Database,
+        db: &Database,
         user_id: i32,
         status: &str,
     ) -> Result<Self, Box<dyn Error>> {

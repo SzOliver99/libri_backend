@@ -6,8 +6,6 @@ use actix_web::{http, web};
 use actix_web::{middleware::Logger, App, HttpServer};
 use env_logger::Env;
 use std::env;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 pub struct WebData {
     pub auth_secret: String,
@@ -25,9 +23,10 @@ impl Server {
 
         let auth_secret = env::var("SECRET_AUTH_KEY").expect("SECRET_AUTH_KEY must be set");
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let redis_url = env::var("REDIS_URL").expect("REDIS_URL must be set");
 
         // Create the database
-        let db = Database::new(&database_url).await.unwrap();
+        let db = Database::new(&database_url, &redis_url).await.unwrap();
 
         HttpServer::new(move || {
             let cors = Cors::default()

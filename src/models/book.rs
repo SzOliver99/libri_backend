@@ -17,7 +17,7 @@ pub struct Book {
 }
 
 impl Book {
-    pub async fn create(db: &mut Database, book: Book) -> Result<(), Box<dyn Error>> {
+    pub async fn create(db: &Database, book: Book) -> Result<(), Box<dyn Error>> {
         // Check if any required fields are null or empty
         if book.title.is_empty()
             || book.author.is_empty()
@@ -61,7 +61,7 @@ impl Book {
         Ok(())
     }
 
-    pub async fn get_all(db: &mut Database) -> Result<Vec<Book>, Box<dyn Error>> {
+    pub async fn get_all(db: &Database) -> Result<Vec<Book>, Box<dyn Error>> {
         let books = sqlx::query_as!(Book, r#"SELECT * FROM books"#)
             .fetch_all(&db.pool)
             .await?;
@@ -69,7 +69,7 @@ impl Book {
         Ok(books)
     }
 
-    pub async fn get_by_id(db: &mut Database, book_id: i32) -> Result<Book, Box<dyn Error>> {
+    pub async fn get_by_id(db: &Database, book_id: i32) -> Result<Book, Box<dyn Error>> {
         let book = sqlx::query_as!(Book, r#"SELECT * FROM books WHERE id = ?"#, book_id)
             .fetch_one(&db.pool)
             .await?;
@@ -77,7 +77,7 @@ impl Book {
         Ok(book)
     }
 
-    pub async fn filter_by(db: &mut Database, query: &str) -> Result<Vec<Book>, Box<dyn Error>> {
+    pub async fn filter_by(db: &Database, query: &str) -> Result<Vec<Book>, Box<dyn Error>> {
         let query_with_whitespace = format!("%{}%", query);
         let query_without_whitespace = format!("%{}%", remove_whitespace(query));
         let books = sqlx::query_as!(

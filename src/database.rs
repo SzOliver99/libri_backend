@@ -6,18 +6,22 @@ use std::time::Duration;
 #[derive(FromRow, Debug, Clone)]
 pub struct Database {
     pub pool: Pool<MySql>,
+    pub redis: redis::Client
     // pub connection: MySqlConnection,
 }
 
 impl Database {
-    pub async fn new(url: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(sql_url: &str, redis_url: &str) -> Result<Self, Box<dyn Error>> {
         let pool = sqlx::mysql::MySqlPoolOptions::new()
             .max_connections(5)
             .acquire_timeout(Duration::from_secs(30))
             .idle_timeout(Duration::from_secs(600))
             .max_lifetime(Duration::from_secs(1800))
-            .connect(url)
+            .connect(sql_url)
             .await?;
+
+        let redis = redis::Client::open(redis_url).unwrap();
+        // let mut redis = client.get_connection().unwrap();
 
         // sqlx::migrate!("./migrations").run(&pool).await?;
 
@@ -30,6 +34,6 @@ impl Database {
         //     .connect()
         //     .await?;
 
-        Ok(Database { pool })
+        Ok(Database { pool, redis })
     }
 }
