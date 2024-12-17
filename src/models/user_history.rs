@@ -63,7 +63,7 @@ impl TransactionHistory {
 
         let mut price = 0;
         for book in books_to_buy.iter() {
-            price += book.price
+            price += book.price * book.quantity
         }
 
         let transaction = sqlx::query!(
