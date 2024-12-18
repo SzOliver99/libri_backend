@@ -69,8 +69,10 @@ impl User {
         }
 
         // Check if user already exists
-        if Self::is_user_exists(db, user.id.unwrap()).await? {
-            return Err("User already exists".into());
+        let is_exists = sqlx::query!(r#"SELECT * from users WHERE email = ? OR username = ?"#, user.email, user.username).fetch_optional(&db.pool).await?;
+
+        if is_exists.is_some() {
+            return Err("User already exists!".into());
         }
 
         // Hash the password and insert the new user
