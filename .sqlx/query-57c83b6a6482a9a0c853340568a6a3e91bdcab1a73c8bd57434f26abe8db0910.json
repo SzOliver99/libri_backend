@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT email FROM users WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "email",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "57c83b6a6482a9a0c853340568a6a3e91bdcab1a73c8bd57434f26abe8db0910"
+}
