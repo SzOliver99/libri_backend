@@ -3,7 +3,7 @@ use std::error::Error;
 use serde::{Deserialize, Serialize};
 
 use super::cart::Cart;
-use crate::database::Database;
+use crate::{database::Database, utils::email::Email};
 
 #[derive(Debug, Serialize, Deserialize)]
 enum TransactionHistoryStatus {
@@ -54,7 +54,6 @@ impl TransactionHistory {
     ) -> Result<Self, Box<dyn Error>> {
         // check if books in cart
         let books_to_buy = Cart::get_cart(db, user_id).await?.books;
-        println!("{:?}", books_to_buy);
         if books_to_buy.is_empty() {
             return Err("User has no product in cart".into());
         }
@@ -89,6 +88,9 @@ impl TransactionHistory {
         sqlx::query!(r#"DELETE FROM user_cart WHERE user_id = ?"#, user_id)
             .execute(&db.pool)
             .await?;
+
+        let user = sqlx::query!(r#"SELECT email FROM users WHERE id = ?"#, user_id).fetch_optional(&db.pool).await?;
+        Email::send_checkout_code(&user.unwrap().email).await?;
 
         Ok(Self {
             id: transaction.last_insert_id(),

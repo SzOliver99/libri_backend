@@ -67,6 +67,35 @@ impl Email {
 
         Ok(())
     }
+
+    pub async fn send_checkout_code(to: &str) -> Result<(), Box<dyn Error>> {
+        let email = Message::builder()
+            .from("noreply@libri.com".parse().unwrap())
+            .to(to.parse().unwrap())
+            .subject("Sikeres tranzakció")
+            .header(ContentType::TEXT_PLAIN)
+            .body("A vásárlás sikeres, a csomag feldolgozás alatt van!".to_string())
+            .unwrap();
+
+        let smtp_username = std::env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
+        let smtp_password = std::env::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
+        let creds = Credentials::new(smtp_username, smtp_password);
+
+        // Open a remote connection to gmail
+        let mailer = SmtpTransport::relay("smtp.gmail.com")
+            .unwrap()
+            .credentials(creds)
+            .build();
+
+        // Send the email
+        match mailer.send(&email) {
+            // If email was sent successfully, print confirmation message
+            Ok(_) => println!("Email sent successfully!"),
+            // If there was an error sending the email, print the error
+            Err(e) => eprintln!("Could not send email: {:?}", e),
+        }
+        Ok(())
+    }
 }
 
 use rand::Rng;
