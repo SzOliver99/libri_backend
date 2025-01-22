@@ -75,7 +75,7 @@ impl Cart {
             }
             None => {
                 // Create a new cart if user doesn't have one
-                Cart::create(&db, user_id).await?;
+                Cart::create(db, user_id).await?;
                 Box::pin(Self::get_cart(db, user_id)).await
             }
         }

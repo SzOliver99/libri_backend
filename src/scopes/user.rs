@@ -52,7 +52,11 @@ struct LoginResponse {
     group: UserGroup,
 }
 
-async fn sign_in(db: web::Data<Database>, data: web::Json<UserInfoJson>, secret: web::Data<WebData>) -> impl Responder {
+async fn sign_in(
+    db: web::Data<Database>,
+    data: web::Json<UserInfoJson>,
+    secret: web::Data<WebData>,
+) -> impl Responder {
     let user = User {
         id: None,
         email: None,
@@ -80,7 +84,7 @@ struct EmailAuthJson {
 }
 
 async fn sign_in_with_email(
-    db: web::Data<Database>, 
+    db: web::Data<Database>,
     data: web::Json<EmailAuthJson>,
     secret: web::Data<WebData>,
 ) -> impl Responder {
@@ -99,7 +103,10 @@ async fn sign_in_with_email(
     }
 }
 
-async fn send_authentication_code(db: web::Data<Database>, data: web::Json<UserInfoJson>) -> impl Responder {
+async fn send_authentication_code(
+    db: web::Data<Database>,
+    data: web::Json<UserInfoJson>,
+) -> impl Responder {
     let mut redis_con = db.redis.get_connection().unwrap();
 
     let user = User {
@@ -142,7 +149,10 @@ async fn protected_route(_auth_token: AuthenticationToken) -> impl Responder {
     })
 }
 
-async fn get_user_history(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
+async fn get_user_history(
+    db: web::Data<Database>,
+    auth_token: AuthenticationToken,
+) -> impl Responder {
     match TransactionHistory::get_all(&db, auth_token.id as i32).await {
         Ok(user_history) => HttpResponse::Ok().json(user_history),
         Err(e) => {
@@ -182,7 +192,7 @@ pub struct ChangeEmailJson {
 }
 
 async fn change_user_email(
-    db: web::Data<Database>, 
+    db: web::Data<Database>,
     auth_token: AuthenticationToken,
     data: web::Json<ChangeEmailJson>,
 ) -> impl Responder {
@@ -219,7 +229,7 @@ pub struct ChangePersonalInformationJson {
 }
 
 async fn change_user_personal_information(
-    db: web::Data<Database>, 
+    db: web::Data<Database>,
     auth_token: AuthenticationToken,
     data: web::Json<ChangePersonalInformationJson>,
 ) -> impl Responder {
@@ -281,7 +291,7 @@ struct ResetPasswordJson {
 }
 
 async fn reset_user_password(
-    db: web::Data<Database>, 
+    db: web::Data<Database>,
     query: web::Query<ResetPasswordQuery>,
     data: web::Json<ResetPasswordJson>,
 ) -> impl Responder {
@@ -309,7 +319,7 @@ struct ChangePasswordJson {
 }
 
 async fn change_password(
-    db: web::Data<Database>, 
+    db: web::Data<Database>,
     auth_token: AuthenticationToken,
     data: web::Json<ChangePasswordJson>,
 ) -> impl Responder {
@@ -328,7 +338,10 @@ async fn change_password(
     }
 }
 
-async fn delete_user_account(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
+async fn delete_user_account(
+    db: web::Data<Database>,
+    auth_token: AuthenticationToken,
+) -> impl Responder {
     match User::delete_account(&db, auth_token.id as i32).await {
         Ok(_) => HttpResponse::Ok().json("Account successfully deleted!"),
         Err(e) => {

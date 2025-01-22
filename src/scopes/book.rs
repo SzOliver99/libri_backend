@@ -36,7 +36,10 @@ struct FilterInfoJson {
     content: String,
 }
 
-async fn filter_by_param(db: web::Data<Database>, data: web::Json<FilterInfoJson>) -> impl Responder {
+async fn filter_by_param(
+    db: web::Data<Database>,
+    data: web::Json<FilterInfoJson>,
+) -> impl Responder {
     match Book::filter_by(&db, &data.content).await {
         Ok(books) => HttpResponse::Ok().json(books),
         Err(e) => HttpResponse::InternalServerError().json(format!("Error fetching book: {:?}", e)),
