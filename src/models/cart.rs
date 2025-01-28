@@ -25,7 +25,7 @@ pub struct CartBook {
 impl Cart {
     pub async fn create(db: &Database, user_id: i32) -> Result<(), Box<dyn Error>> {
         if !User::is_user_exists(db, user_id).await? {
-            return Err("User not found".into());
+            return Err("A felhasználó nem található".into());
         }
 
         // Check if user has a cart
@@ -34,7 +34,7 @@ impl Cart {
             .await?;
 
         if cart.is_some() {
-            return Err("User already has a cart".into());
+            return Err("A felhasználónak már van kosara".into());
         }
 
         // Create a new cart
@@ -104,7 +104,7 @@ impl Cart {
             .await?
             .is_none()
         {
-            return Err("Book doesn't exist".into());
+            return Err("A könyv nem létezik".into());
         }
 
         // Upsert the cart item
@@ -162,7 +162,7 @@ impl Cart {
             .await?;
             Ok(())
         } else {
-            Err("User doesn't have a cart".into())
+            Err("A felhasználónak nincs kosara".into())
         }
     }
 }

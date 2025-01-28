@@ -27,7 +27,7 @@ impl Book {
             || book.isbn.is_empty()
         {
             return Err(
-                "All fields (title, author, price, description, imageSrc, publishedDate, isbn) are required"
+                "Minden mező (title, author, price, description, imageSrc, publishedDate, isbn) kitöltése kötelező"
                     .into(),
             );
         }
@@ -42,7 +42,7 @@ impl Book {
         .await?;
 
         if existing_book.is_some() {
-            return Err("Book already exists".into());
+            return Err("A könyv már létezik".into());
         }
 
         sqlx::query!(

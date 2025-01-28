@@ -15,7 +15,7 @@ pub fn book_scope() -> Scope {
 async fn create_book(db: web::Data<Database>, book: web::Json<Book>) -> impl Responder {
     match Book::create(&db, book.into_inner()).await {
         Ok(_) => HttpResponse::Created().json("Book created"),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error creating book: {:?}", e)),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -27,7 +27,7 @@ async fn get_books(db: web::Data<Database>) -> impl Responder {
 async fn get_book_by_id(db: web::Data<Database>, book_id: web::Path<i32>) -> impl Responder {
     match Book::get_by_id(&db, book_id.into_inner()).await {
         Ok(book) => HttpResponse::Ok().json(book),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error fetching book: {:?}", e)),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -42,6 +42,6 @@ async fn filter_by_param(
 ) -> impl Responder {
     match Book::filter_by(&db, &data.content).await {
         Ok(books) => HttpResponse::Ok().json(books),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error fetching book: {:?}", e)),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }

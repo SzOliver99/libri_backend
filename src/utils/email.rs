@@ -10,29 +10,25 @@ impl Email {
         reset_token: &str,
     ) -> Result<(), Box<dyn Error>> {
         let email = Message::builder()
-            .from("noreply@libri.com".parse().unwrap())
+            .from("noreply@library-basement.com".parse().unwrap())
             .to(to.parse().unwrap())
-            .subject("Password Reset")
+            .subject("Jelszó visszaállítási kérelem")
             .header(ContentType::TEXT_PLAIN)
-            .body(format!("Your password reset token is: {}\nThe link to the reset page: https://libri-project.vercel.app/reset-password?token={}.", reset_token, reset_token))
+            .body(format!("\nA jelszó-visszaállítási kód a következő: {} \n Vagy a következő linkre kattintva: https://libri-project.vercel.app/reset-password?token={}.", reset_token, reset_token))
             .unwrap();
 
         let smtp_username = std::env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
         let smtp_password = std::env::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
         let creds = Credentials::new(smtp_username, smtp_password);
 
-        // Open a remote connection to gmail
         let mailer = SmtpTransport::relay("smtp.gmail.com")
             .unwrap()
             .credentials(creds)
             .build();
 
-        // Send the email
         match mailer.send(&email) {
-            // If email was sent successfully, print confirmation message
-            Ok(_) => println!("Email sent successfully!"),
-            // If there was an error sending the email, print the error
-            Err(e) => eprintln!("Could not send email: {:?}", e),
+            Ok(_) => println!("E-mail sikeresen elküldve!"),
+            Err(e) => eprintln!("Hiba történt: {:?}", e),
         }
 
         Ok(())
@@ -40,29 +36,25 @@ impl Email {
 
     pub async fn send_authentication_code(to: &str, code: &str) -> Result<(), Box<dyn Error>> {
         let email = Message::builder()
-            .from("noreply@libri.com".parse().unwrap())
+            .from("noreply@library-basement.com".parse().unwrap())
             .to(to.parse().unwrap())
-            .subject("Email Authentication Code")
+            .subject("E-mail hitelesítési kód")
             .header(ContentType::TEXT_PLAIN)
-            .body(format!("Your email authentication code is: {}", code))
+            .body(format!("Az Ön e-mail hitelesítési kódja: {}", code))
             .unwrap();
 
         let smtp_username = std::env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
         let smtp_password = std::env::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
         let creds = Credentials::new(smtp_username, smtp_password);
 
-        // Open a remote connection to gmail
         let mailer = SmtpTransport::relay("smtp.gmail.com")
             .unwrap()
             .credentials(creds)
             .build();
 
-        // Send the email
         match mailer.send(&email) {
-            // If email was sent successfully, print confirmation message
-            Ok(_) => println!("Email sent successfully!"),
-            // If there was an error sending the email, print the error
-            Err(e) => eprintln!("Could not send email: {:?}", e),
+            Ok(_) => println!("E-mail sikeresen elküldve!"),
+            Err(e) => eprintln!("Hiba történt: {:?}", e),
         }
 
         Ok(())

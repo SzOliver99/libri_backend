@@ -56,7 +56,7 @@ impl TransactionHistory {
         let books_to_buy = Cart::get_cart(db, user_id).await?.books;
         println!("{:?}", books_to_buy);
         if books_to_buy.is_empty() {
-            return Err("User has no product in cart".into());
+            return Err("A felhasználónak nincs terméke a kosárban".into());
         }
 
         let purchase_date = chrono::Local::now().date_naive();

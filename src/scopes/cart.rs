@@ -19,10 +19,13 @@ struct BookCartRequest {
     book_id: i32,
 }
 
-async fn delete_user_cart(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
+async fn delete_user_cart(
+    db: web::Data<Database>,
+    auth_token: AuthenticationToken,
+) -> impl Responder {
     match Cart::delete_cart(&db, auth_token.id as i32).await {
-        Ok(_) => HttpResponse::Ok().json("Cart deleted"),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error deleting cart: {:?}", e)),
+        Ok(_) => HttpResponse::Ok().json("Kosár sikeresen törölve."),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -32,10 +35,8 @@ async fn increment_book_quantity(
     data: web::Json<BookCartRequest>,
 ) -> impl Responder {
     match Cart::increment_book_quantity(&db, auth_token.id as i32, data.book_id).await {
-        Ok(_) => HttpResponse::Ok().json("Book added to cart"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Error adding book to cart: {:?}", e))
-        }
+        Ok(_) => HttpResponse::Ok().json(""),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -45,18 +46,15 @@ async fn decrease_book_quantity(
     data: web::Json<BookCartRequest>,
 ) -> impl Responder {
     match Cart::decrease_book_quantity(&db, auth_token.id as i32, data.book_id).await {
-        Ok(_) => HttpResponse::Ok().json("Book deleted from cart"),
-        Err(e) => HttpResponse::InternalServerError()
-            .json(format!("Error deleting book from cart: {:?}", e)),
+        Ok(_) => HttpResponse::Ok().json(""),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
 async fn buy_user_cart(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
     match TransactionHistory::create(&db, auth_token.id as i32, "InProgress").await {
-        Ok(_) => {
-            HttpResponse::Ok().json("We got your order we'll send you email for more informations.")
-        }
-        Err(e) => HttpResponse::InternalServerError()
-            .json(format!("Error for creating transaction: {:?}", e)),
+        Ok(_) => HttpResponse::Ok()
+            .json("Megkaptuk a rendelését, további információkért e-mailt küldünk Önnek."),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }

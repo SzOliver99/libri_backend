@@ -65,14 +65,20 @@ impl User {
     pub async fn new(db: &Database, user: User) -> Result<Self, Box<dyn Error>> {
         // Check for required fields
         if user.username.is_none() || user.password.is_none() || user.email.is_none() {
-            return Err("All fields (email, username, password) are required".into());
+            return Err("Minden mező (e-mail, felhasználónév, jelszó) kitöltése kötelező".into());
         }
 
         // Check if user already exists
-        let is_exists = sqlx::query!(r#"SELECT * from users WHERE email = ? OR username = ?"#, user.email, user.username).fetch_optional(&db.pool).await?;
+        let is_exists = sqlx::query!(
+            r#"SELECT * from users WHERE email = ? OR username = ?"#,
+            user.email,
+            user.username
+        )
+        .fetch_optional(&db.pool)
+        .await?;
 
         if is_exists.is_some() {
-            return Err("User already exists!".into());
+            return Err("A felhasználó már létezik!".into());
         }
 
         // Hash the password and insert the new user
@@ -121,15 +127,12 @@ impl User {
 
         match user_info {
             Some(info) => Ok(info),
-            None => Err("User info not found".into()),
+            None => Err("A felhasználói adatok nem találhatók".into()),
         }
     }
 
     // Login with username and password
-    pub async fn login_with_password(
-        db: &Database,
-        user: User,
-    ) -> Result<Self, Box<dyn Error>> {
+    pub async fn login_with_password(db: &Database, user: User) -> Result<Self, Box<dyn Error>> {
         let user_data = sqlx::query_as!(
             Self,
             r#"SELECT * FROM users WHERE username = ?"#,
@@ -138,24 +141,23 @@ impl User {
         .fetch_optional(&db.pool)
         .await?;
 
-        match user_data {
-            Some(hashed_user) => {
-                if credentials_hashing::verify_password(
-                    &user.password.unwrap(),
-                    hashed_user.password.as_ref().unwrap(),
-                ) {
-                    Ok(Self {
-                        id: hashed_user.id,
-                        email: hashed_user.email,
-                        username: hashed_user.username,
-                        password: Some(hashed_user.password.unwrap()),
-                        group: hashed_user.group,
-                    })
-                } else {
-                    Err("Password not valid".into())
-                }
-            }
-            None => Err("User not found".into()),
+        let Some(hashed_user) = user_data else {
+            return Err("A felhasználó nem található".into());
+        };
+
+        if credentials_hashing::verify_password(
+            &user.password.unwrap(),
+            hashed_user.password.as_ref().unwrap(),
+        ) {
+            Ok(Self {
+                id: hashed_user.id,
+                email: hashed_user.email,
+                username: hashed_user.username,
+                password: Some(hashed_user.password.unwrap()),
+                group: hashed_user.group,
+            })
+        } else {
+            Err("A jelszó érvénytelen".into())
         }
     }
 
@@ -171,19 +173,18 @@ impl User {
             .fetch_optional(&db.pool)
             .await?;
 
-        match user_data {
-            Some(hashed_user) => {
-                redis_con.del::<_, String>(code)?;
-                Ok(Self {
-                    id: hashed_user.id,
-                    email: hashed_user.email,
-                    username: hashed_user.username,
-                    password: Some(hashed_user.password.unwrap()),
-                    group: hashed_user.group,
-                })
-            }
-            None => Err("User not found".into()),
-        }
+        let Some(hashed_user) = user_data else {
+            return Err("A felhasználó nem található".into());
+        };
+
+        redis_con.del::<_, String>(code)?;
+        Ok(Self {
+            id: hashed_user.id,
+            email: hashed_user.email,
+            username: hashed_user.username,
+            password: Some(hashed_user.password.unwrap()),
+            group: hashed_user.group,
+        })
     }
 
     // Send authentication code for password reset
@@ -196,15 +197,14 @@ impl User {
             .fetch_optional(&db.pool)
             .await?;
 
-        match user {
-            Some(user) => {
-                let reset_token = Token::generate_six_digit_number();
-                Redis::set_token_to_user(redis_con, user.id.unwrap() as u32, &reset_token)?;
-                Email::send_authentication_code(&user.email.unwrap(), &reset_token).await?;
-                Ok(())
-            }
-            None => Err("Email not found".into()),
-        }
+        let Some(user) = user else {
+            return Err("Az e-mail nem található".into());
+        };
+
+        let reset_token = Token::generate_six_digit_number();
+        Redis::set_token_to_user(redis_con, user.id.unwrap() as u32, &reset_token)?;
+        Email::send_authentication_code(&user.email.unwrap(), &reset_token).await?;
+        Ok(())
     }
 
     // Handle password reset request
@@ -217,15 +217,14 @@ impl User {
             .fetch_optional(&db.pool)
             .await?;
 
-        match user {
-            Some(user) => {
-                let reset_token = Token::generate_reset_token();
-                Redis::set_token_to_user(redis_con, user.id.unwrap() as u32, &reset_token)?;
-                Email::send_password_reset_email(&user.email.unwrap(), &reset_token).await?;
-                Ok(())
-            }
-            None => Err("User not found".into()),
-        }
+        let Some(user) = user else {
+            return Err("A felhasználó nem található".into());
+        };
+
+        let reset_token = Token::generate_reset_token();
+        Redis::set_token_to_user(redis_con, user.id.unwrap() as u32, &reset_token)?;
+        Email::send_password_reset_email(&user.email.unwrap(), &reset_token).await?;
+        Ok(())
     }
 
     // Reset user's password
@@ -237,29 +236,28 @@ impl User {
     ) -> Result<(), Box<dyn Error>> {
         let user_id = Redis::get_user_id_by_token(redis_con, &reset_token)?;
         if user_id == -1 {
-            return Err("Token does not exist".into());
+            return Err("Nem létező token!".into());
         }
 
         let user = sqlx::query_as!(Self, "SELECT * FROM users WHERE id = ?", user_id)
             .fetch_optional(&db.pool)
             .await?;
 
-        match user {
-            Some(user) => {
-                let hashed_password = credentials_hashing::hash_password(&new_password);
-                let _ = sqlx::query!(
-                    "UPDATE users SET password = ? WHERE id = ?",
-                    hashed_password,
-                    &user.id
-                )
-                .execute(&db.pool)
-                .await?;
+        let Some(user) = user else {
+            return Err("A felhasználó nem található".into());
+        };
 
-                redis_con.del::<_, ()>(&reset_token)?;
-                Ok(())
-            }
-            None => Err("Invalid or expired reset token".into()),
-        }
+        let hashed_password = credentials_hashing::hash_password(&new_password);
+        let _ = sqlx::query!(
+            "UPDATE users SET password = ? WHERE id = ?",
+            hashed_password,
+            &user.id
+        )
+        .execute(&db.pool)
+        .await?;
+
+        redis_con.del::<_, ()>(&reset_token)?;
+        Ok(())
     }
 
     // Change user's password
@@ -273,25 +271,24 @@ impl User {
             .fetch_optional(&db.pool)
             .await?;
 
-        match user {
-            Some(user) => {
-                if !credentials_hashing::verify_password(&old_password, &user.password) {
-                    return Err("Old password is incorrect".into());
-                }
+        let Some(user) = user else {
+            return Err("A felhasználó nem található".into());
+        };
 
-                let hashed_password = credentials_hashing::hash_password(&new_password);
-                let _ = sqlx::query!(
-                    "UPDATE users SET password = ? WHERE id = ?",
-                    hashed_password,
-                    user_id
-                )
-                .execute(&db.pool)
-                .await?;
-
-                Ok(())
-            }
-            None => Err("User not found".into()),
+        if !credentials_hashing::verify_password(&old_password, &user.password) {
+            return Err("A régi jelszó helytelen".into());
         }
+
+        let hashed_password = credentials_hashing::hash_password(&new_password);
+        let _ = sqlx::query!(
+            "UPDATE users SET password = ? WHERE id = ?",
+            hashed_password,
+            user_id
+        )
+        .execute(&db.pool)
+        .await?;
+
+        Ok(())
     }
 
     // Change user's personal information
@@ -367,36 +364,34 @@ impl User {
             .await?;
 
         if is_exists.is_some() {
-            return Err("Email already exists".into());
+            return Err("Az e-mail cím már létezik".into());
         }
 
         let user_data = sqlx::query_as!(Self, r#"SELECT * FROM users WHERE id = ?"#, id)
             .fetch_optional(&db.pool)
             .await?;
 
-        match user_data {
-            Some(hashed_user) => {
-                if credentials_hashing::verify_password(
-                    &data.password,
-                    hashed_user.password.as_ref().unwrap(),
-                ) {
-                    let _ = sqlx::query!(
-                        r#"
-                        UPDATE users
-                        SET email = ?
-                        WHERE id = ?
-                        "#,
-                        data.new_email,
-                        id
-                    )
-                    .execute(&db.pool)
-                    .await?;
-                    Ok(())
-                } else {
-                    Err("Password not valid".into())
-                }
-            }
-            None => Err("User not found".into()),
+        let Some(hashed_user) = user_data else {
+            return Err("A felhasználó nem található".into());
+        };
+        if credentials_hashing::verify_password(
+            &data.password,
+            hashed_user.password.as_ref().unwrap(),
+        ) {
+            let _ = sqlx::query!(
+                r#"
+                UPDATE users
+                SET email = ?
+                WHERE id = ?
+                "#,
+                data.new_email,
+                id
+            )
+            .execute(&db.pool)
+            .await?;
+            Ok(())
+        } else {
+            Err("A jelszó érvénytelen".into())
         }
     }
 

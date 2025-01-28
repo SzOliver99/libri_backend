@@ -74,7 +74,7 @@ async fn sign_in(
             .await,
             group: logged_in_user.group,
         }),
-        Err(e) => HttpResponse::Unauthorized().json(format!("Sign-in failed: {}", e)),
+        Err(e) => HttpResponse::Unauthorized().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -99,7 +99,7 @@ async fn sign_in_with_email(
             .await,
             group: logged_in_user.group,
         }),
-        Err(e) => HttpResponse::Unauthorized().json(format!("Sign-in failed: {}", e)),
+        Err(e) => HttpResponse::Unauthorized().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -118,9 +118,8 @@ async fn send_authentication_code(
     };
 
     match User::send_authentication_code(&db, &mut redis_con, user).await {
-        Ok(_) => HttpResponse::Ok().json("Send authentication code successful"),
-        Err(e) => HttpResponse::InternalServerError()
-            .json(format!("Send authentication code failed: {:?}", e)),
+        Ok(_) => HttpResponse::Ok().json("Hitelesítési kód elküldve!"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -133,8 +132,8 @@ async fn sign_up(db: web::Data<Database>, data: web::Json<UserInfoJson>) -> impl
         group: UserGroup::User,
     };
     match User::new(&db, user).await {
-        Ok(_) => HttpResponse::Created().json("Signup successful"),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Signup failed: {:?}", e)),
+        Ok(_) => HttpResponse::Created().json("Sikeres regisztráció!"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -145,7 +144,7 @@ struct ProtectedResponse {
 
 async fn protected_route(_auth_token: AuthenticationToken) -> impl Responder {
     HttpResponse::Ok().json(ProtectedResponse {
-        message: "Auth success".to_string(),
+        message: "Sikeres hitelesítés".to_string(),
     })
 }
 
@@ -155,33 +154,28 @@ async fn get_user_history(
 ) -> impl Responder {
     match TransactionHistory::get_all(&db, auth_token.id as i32).await {
         Ok(user_history) => HttpResponse::Ok().json(user_history),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Error getting user history: {:?}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
 async fn get_user_cart(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
     match Cart::get_cart(&db, auth_token.id as i32).await {
         Ok(cart) => HttpResponse::Ok().json(cart),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Error getting cart: {:?}", e)),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
 async fn get_user_info(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
     match User::get_info(&db, auth_token.id as i32).await {
         Ok(user_info) => HttpResponse::Ok().json(user_info),
-        Err(e) => HttpResponse::InternalServerError()
-            .json(format!("Error getting user information: {:?}", e)),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
 async fn is_user_admin(db: web::Data<Database>, auth_token: AuthenticationToken) -> impl Responder {
     match User::is_admin(&db, auth_token.id as i32).await {
         Ok(is_admin) => HttpResponse::Ok().json(is_admin),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Error getting user group: {:?}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -197,10 +191,8 @@ async fn change_user_email(
     data: web::Json<ChangeEmailJson>,
 ) -> impl Responder {
     match User::change_email(&db, auth_token.id as i32, data.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().json("Email successfully changed!"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Error for changing email: {:?}", e))
-        }
+        Ok(_) => HttpResponse::Ok().json("Email sikeresen módosítva!"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -215,9 +207,8 @@ async fn change_user_username(
     data: web::Json<ChangeUsernameJson>,
 ) -> impl Responder {
     match User::change_username(&db, auth_token.id as i32, data.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().json("Username successfully changed!"),
-        Err(e) => HttpResponse::InternalServerError()
-            .json(format!("Error for changing username: {:?}", e)),
+        Ok(_) => HttpResponse::Ok().json("Felhasználónév sikeresen módosítva!"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -234,10 +225,8 @@ async fn change_user_personal_information(
     data: web::Json<ChangePersonalInformationJson>,
 ) -> impl Responder {
     match User::change_personal_info(&db, auth_token.id as i32, data.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().json("Successfully modified"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Error changing information: {:?}", e))
-        }
+        Ok(_) => HttpResponse::Ok().json("Sikeresen módosítva"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -255,10 +244,8 @@ async fn change_user_billing_information(
     data: web::Json<ChangeBillingInformationJson>,
 ) -> impl Responder {
     match User::change_billing_info(&db, auth_token.id as i32, data.into_inner()).await {
-        Ok(_) => HttpResponse::Ok().json("Successfully modified"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Error changing information: {:?}", e))
-        }
+        Ok(_) => HttpResponse::Ok().json("Sikeresen módosítva"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -273,10 +260,8 @@ async fn forgot_password(db: web::Data<Database>, data: web::Json<UserInfoJson>)
         group: UserGroup::User,
     };
     match User::forgot_password(&db, &mut redis_con, user).await {
-        Ok(_) => HttpResponse::Ok().json("Forgot password successful"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Forgot password failed: {:?}", e))
-        }
+        Ok(_) => HttpResponse::Ok().json("A jelszó visszaállítási link elküldve!"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -305,10 +290,8 @@ async fn reset_user_password(
     )
     .await
     {
-        Ok(_) => HttpResponse::Ok().json("Reset password successful"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Reset password failed: {:?}", e))
-        }
+        Ok(_) => HttpResponse::Ok().json("Sikeresen megváltoztattad a jelszavad!"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -331,10 +314,8 @@ async fn change_password(
     )
     .await
     {
-        Ok(_) => HttpResponse::Ok().json("Change password successful"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Change password failed: {:?}", e))
-        }
+        Ok(_) => HttpResponse::Ok().json("Jelszó sikeresen módosítva"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
 
@@ -343,9 +324,7 @@ async fn delete_user_account(
     auth_token: AuthenticationToken,
 ) -> impl Responder {
     match User::delete_account(&db, auth_token.id as i32).await {
-        Ok(_) => HttpResponse::Ok().json("Account successfully deleted!"),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Failed to delete account: {:?}", e))
-        }
+        Ok(_) => HttpResponse::Ok().json("A fiók sikeresen törölve lett!"),
+        Err(e) => HttpResponse::InternalServerError().json(format!("Hiba történt: {}", e)),
     }
 }
