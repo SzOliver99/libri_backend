@@ -69,6 +69,14 @@ impl Book {
         Ok(books)
     }
 
+    pub async fn get_best_sellers(db: &Database) -> Result<Vec<Book>, Box<dyn Error>> {
+        let books = sqlx::query_as!(Book, r#"SELECT * FROM books LIMIT 10, 4"#)
+            .fetch_all(&db.pool)
+            .await?;
+
+        Ok(books)
+    }
+
     pub async fn get_by_id(db: &Database, book_id: i32) -> Result<Book, Box<dyn Error>> {
         let book = sqlx::query_as!(Book, r#"SELECT * FROM books WHERE id = ?"#, book_id)
             .fetch_one(&db.pool)

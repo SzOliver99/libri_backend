@@ -6,6 +6,7 @@ pub fn book_scope() -> Scope {
     web::scope("/book")
         .route("/create", web::post().to(create_book))
         .route("/get-all", web::get().to(get_books))
+        .route("/get-best", web::get().to(get_best_sellers))
         .route("/get/{id}", web::get().to(get_book_by_id))
         .route("/filter-by", web::post().to(filter_by_param))
     // .route("/{id}", web::put().to(update_book))
@@ -21,6 +22,11 @@ async fn create_book(db: web::Data<Database>, book: web::Json<Book>) -> impl Res
 
 async fn get_books(db: web::Data<Database>) -> impl Responder {
     let books = Book::get_all(&db).await.unwrap();
+    HttpResponse::Ok().json(books)
+}
+
+async fn get_best_sellers(db: web::Data<Database>) -> impl Responder {
+    let books = Book::get_best_sellers(&db).await.unwrap();
     HttpResponse::Ok().json(books)
 }
 
