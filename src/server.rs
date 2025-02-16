@@ -30,7 +30,8 @@ impl Server {
 
         HttpServer::new(move || {
             let cors = Cors::default()
-                .allowed_origin("https://libri-project.vercel.app")
+                // .allowed_origin("https://libri-project.vercel.app")
+                .allow_any_origin()
                 .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                 .allowed_headers(vec![
                     http::header::AUTHORIZATION,
