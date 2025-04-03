@@ -14,7 +14,7 @@ RUN cargo +nightly chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
 ENV SQLX_OFFLINE=true
-RUN cargo +nightly build --release --bin libri_backend
+RUN cargo +nightly build --release --bin library-basement
 
 # We do not need the Rust toolchain to run the binary!
 FROM debian:bookworm-slim AS runtime
@@ -23,5 +23,5 @@ RUN apt-get update -y \
     && apt-get install -y --no-install-recommends openssl \
     && apt-get install -y ca-certificates \
     && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/libri_backend /usr/local/bin
-ENTRYPOINT ["/usr/local/bin/libri_backend"]
+COPY --from=builder /app/target/release/library-basement /usr/local/bin
+ENTRYPOINT ["/usr/local/bin/library-basement_backend"]
