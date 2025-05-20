@@ -14,7 +14,7 @@ impl Email {
             .to(to.parse().unwrap())
             .subject("Jelszó visszaállítási kérelem")
             .header(ContentType::TEXT_PLAIN)
-            .body(format!("\nA jelszó-visszaállítási kód a következő: {} \n Vagy a következő linkre kattintva: https://libri-project.vercel.app/reset-password?token={}.", reset_token, reset_token))
+            .body(format!("\nA jelszó-visszaállítási kód a következő: {} \n Vagy a következő linkre kattintva: https://library-basement.vercel.app/reset-password?token={}.", reset_token, reset_token))
             .unwrap();
 
         let smtp_username = std::env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
